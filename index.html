@@ -390,6 +390,9 @@ const TEAMS = {
 const PART_ORDER = ["인증파트", "판매파트", "인프라파트", "생산파트"];
 const GRADES = ["S", "A", "B", "C", "D"];
 
+const DEFAULT_EMPLOYEES = {"관제팀(FD)":["곽용주","유형근","문대담","김동규1","박상현","유영호","채정진","김찬우","장동수","함명근","임동현"],"스튜디오팀(운영)":["박효준","송하정","송우리","서강","강민범","이정우","고진태","전요섭","이예빈","송준영","백문성","정웅휘","구여진","김시우","오한솔"],"관제팀(BO)":["차승빈","정현","노경민","백동훈","김상민","조현진","강서현"],"인프라팀":["이성주","장지호"],"진단팀(리프트)":["김한성","구본승","양경준","염상돈","강현우","정원국","이윤재","김승건","김윤환","김진성","최준용","이영호","김진혁"],"스튜디오팀(촬영)":["정시훈","이슬","정윤서","이우나","김광호","장경환","송현승","문선우","김기남","추정호"],"디테일링팀(QC)":["김창환","배준형","민경진","신민석","조윤성","김건"],"디테일링팀":["이종환","이영인","이승윤","김동규2","김정훈","박용승","김현록","황정호","유성훈","송창현","김형신","오근하","김민재","문승재","박민철","장지훈","이준혁","김동현","김준영","장우진","권수환","황대현","김승현","김광종","이은성"],"출고팀":["이승주","권지오","이진우","윤채영","박준형","이건탁","김선빈","김동욱","전보훈","서동혁","정승헌","유형원","김정학","정태호","홍주현","백지인","경민지","김수민","이병진","정승화","이동명","송재환","박준영","박광훈","이주원","김수영","최혁진","문성보","김상빈","차봉환"],"진단팀(옵션)":["김효민","박상민","원하늘","김주환","유현준"],"관제팀(OQC)":["윤한민","김진주","김성태","엄정원","박수민"],"UDTT정비팀":["김순철","권대명","김수현","한장환","류현석","구서영","박하은","성시준","나영훈"]};
+const DEFAULT_RENEWAL_NAMES = {"관제팀(FD)":["김동규1","박상현","유영호","채정진","김찬우","장동수","함명근","임동현"],"스튜디오팀(운영)":["송우리","서강","강민범","이정우","고진태","전요섭","이예빈","송준영","백문성","정웅휘","구여진"],"관제팀(BO)":["노경민","백동훈","김상민"],"인프라팀":["장지호"],"진단팀(리프트)":["강현우","정원국","이윤재","김승건","김윤환","김진성","최준용","이영호"],"스튜디오팀(촬영)":["이우나","김광호","장경환","송현승","문선우","김기남","추정호"],"디테일링팀(QC)":["민경진","신민석","조윤성","김건"],"디테일링팀":["이승윤","김동규2","김정훈","박용승","김현록","황정호","유성훈","송창현","김형신","오근하","김민재","문승재","박민철","장지훈","이준혁","김동현","김준영","장우진","권수환","황대현","김승현","김광종","이은성"],"출고팀":["박준형","이건탁","김선빈","김동욱","전보훈","서동혁","정승헌","유형원","김정학","정태호","홍주현","백지인","경민지","김수민","이병진","정승화","이동명","송재환","박준영","박광훈","이주원"],"진단팀(옵션)":["김효민","박상민","원하늘","김주환"],"관제팀(OQC)":["윤한민","김진주","김성태","엄정원"],"UDTT정비팀":["김순철","권대명","김수현","한장환","류현석","구서영"]};
+
 // ══════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════
@@ -448,24 +451,64 @@ async function loadPeriodData() {
     submissions = subData || {};
     renewals = empData.renewals || {};
 
-    // 팀 기본값 복원
+    // 기본 명단 적용
     Object.keys(TEAMS).forEach(key => {
-      TEAMS[key].employees = ["홍길동"];
+      TEAMS[key].employees = DEFAULT_EMPLOYEES[key] || ["홍길동"];
     });
 
-    // 서버에서 받은 대상자 명단 적용
+    // 기본 갱신 데이터 적용
+    if (Object.keys(renewals).length === 0) {
+      Object.keys(DEFAULT_RENEWAL_NAMES).forEach(team => {
+        (DEFAULT_RENEWAL_NAMES[team] || []).forEach(emp => {
+          renewals[team + '::' + emp] = true;
+        });
+      });
+    }
+
+    // 서버에서 받은 대상자 명단 적용 (서버 데이터가 있으면 덮어쓰기)
     const employees = empData.employees || {};
-    Object.keys(employees).forEach(team => {
-      if (TEAMS[team]) {
-        TEAMS[team].employees = employees[team];
-      }
-    });
+    const hasServerData = Object.keys(employees).length > 0;
+
+    if (hasServerData) {
+      Object.keys(employees).forEach(team => {
+        if (TEAMS[team]) {
+          TEAMS[team].employees = employees[team];
+        }
+      });
+    } else {
+      // 서버에 데이터 없으면 자동 업로드
+      autoUploadDefaults();
+    }
   } catch (err) {
     console.error('데이터 로드 실패:', err);
-    showToast('데이터를 불러오지 못했습니다. 새로고침 해주세요.');
+    // 오프라인이어도 기본 명단은 표시
+    Object.keys(TEAMS).forEach(key => {
+      TEAMS[key].employees = DEFAULT_EMPLOYEES[key] || ["홍길동"];
+    });
+    Object.keys(DEFAULT_RENEWAL_NAMES).forEach(team => {
+      (DEFAULT_RENEWAL_NAMES[team] || []).forEach(emp => {
+        renewals[team + '::' + emp] = true;
+      });
+    });
   }
 
   isLoading = false;
+}
+
+async function autoUploadDefaults() {
+  try {
+    const payload = [];
+    Object.keys(DEFAULT_EMPLOYEES).forEach(team => {
+      DEFAULT_EMPLOYEES[team].forEach(emp => {
+        const isRenewal = (DEFAULT_RENEWAL_NAMES[team] || []).includes(emp);
+        payload.push({ team, employee: emp, renewal: isRenewal });
+      });
+    });
+    await apiPost({ action: 'uploadEmployees', payload });
+    console.log('기본 명단 자동 업로드 완료');
+  } catch (e) {
+    console.error('자동 업로드 실패:', e);
+  }
 }
 
 // 저장 함수들 (서버에 POST)

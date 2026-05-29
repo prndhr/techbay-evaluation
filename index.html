@@ -945,7 +945,6 @@ function promptTeamHistoryPassword(teamName) {
 }
 
 function promptHistoryPassword() {
-  if (hrAuthenticated) { showHistory(); return; }
   pendingHistoryTeam = null;
   document.getElementById('pwInput').value = '';
   document.getElementById('pwError').style.display = 'none';
@@ -970,7 +969,6 @@ function checkPassword() {
     }
   } else {
     if (pw === HR_PASSWORD) {
-      hrAuthenticated = true;
       closePwModal();
       showHistory();
     } else {

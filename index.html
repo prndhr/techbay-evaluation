@@ -239,6 +239,17 @@
 // ══════════════════════════════════════════════
 
 const HR_PASSWORD = "0104";
+const TEAM_PASSWORDS = {
+  "진단팀(리프트)": "1315", "진단팀(옵션)": "1315",
+  "UDTT정비팀": "1315",
+  "출고팀": "9090",
+  "관제팀(BO)": "2484", "관제팀(FD)": "2484",
+  "인프라팀": "2484",
+  "관제팀(OQC)": "9432",
+  "스튜디오팀(촬영)": "5744", "스튜디오팀(운영)": "5744",
+  "디테일링팀": "5744", "디테일링팀(QC)": "5744",
+  "테스트팀": "1234"
+};
 
 const PERIODS = [
   { id: "2601", label: "26년 01월" },
@@ -926,7 +937,6 @@ document.getElementById('modalOverlay').addEventListener('click', function(e) {
 let pendingHistoryTeam = null;
 
 function promptTeamHistoryPassword(teamName) {
-  if (hrAuthenticated) { showTeamHistory(teamName); return; }
   pendingHistoryTeam = teamName;
   document.getElementById('pwInput').value = '';
   document.getElementById('pwError').style.display = 'none';
@@ -947,19 +957,28 @@ function promptHistoryPassword() {
 
 function checkPassword() {
   const pw = document.getElementById('pwInput').value;
-  if (pw === HR_PASSWORD) {
-    hrAuthenticated = true;
-    closePwModal();
-    if (pendingHistoryTeam) {
+  if (pendingHistoryTeam) {
+    // 팀별 비밀번호 또는 HR 비밀번호 모두 허용
+    const teamPw = TEAM_PASSWORDS[pendingHistoryTeam];
+    if (pw === teamPw || pw === HR_PASSWORD) {
+      closePwModal();
       showTeamHistory(pendingHistoryTeam);
       pendingHistoryTeam = null;
     } else {
-      showHistory();
+      document.getElementById('pwError').style.display = 'block';
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwInput').focus();
     }
   } else {
-    document.getElementById('pwError').style.display = 'block';
-    document.getElementById('pwInput').value = '';
-    document.getElementById('pwInput').focus();
+    if (pw === HR_PASSWORD) {
+      hrAuthenticated = true;
+      closePwModal();
+      showHistory();
+    } else {
+      document.getElementById('pwError').style.display = 'block';
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwInput').focus();
+    }
   }
 }
 

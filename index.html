@@ -50,10 +50,9 @@
   .team-header .subtitle { font-size:13px; color:#888; margin-left:12px; }
 
   /* ── Employee Table ── */
-  .emp-table { width:100%; border-collapse:separate; border-spacing:0; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); }
-  .emp-table thead th { background:#fafafa; font-size:12px; font-weight:600; color:#666; padding:10px 12px; text-align:left; border-bottom:1px solid #e8e8e8; white-space:nowrap; }
-  .emp-table tbody td { padding:10px 12px; border-bottom:1px solid #f0f0f0; font-size:14px; vertical-align:middle; white-space:nowrap; }
-  .emp-table .col-gap { padding-left:36px; }
+  .emp-table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .emp-table thead th { background:#fafafa; font-size:12px; font-weight:600; color:#666; padding:10px 12px; text-align:center; border-bottom:1px solid #e8e8e8; white-space:nowrap; }
+  .emp-table tbody td { padding:10px 12px; border-bottom:1px solid #f0f0f0; font-size:14px; vertical-align:middle; white-space:nowrap; text-align:center; }
   .emp-table tbody tr:last-child td { border-bottom:none; }
   .emp-table tbody tr:hover { background:#fafafa; }
 
@@ -623,11 +622,11 @@ function renderTeamView(name) {
       <th>이름</th>
       <th>입사일</th>
       <th>갱신</th>
-      <th class="col-gap" style="text-align:center;">제출하기</th>
-      <th style="text-align:center;">수정하기</th>
-      <th style="text-align:center;">제출 여부</th>
-      <th style="text-align:center;">면담</th>
-      <th style="text-align:center;">삭제</th>
+      <th>제출하기</th>
+      <th>수정하기</th>
+      <th>제출 여부</th>
+      <th>면담</th>
+      <th>삭제</th>
     </tr></thead><tbody>`;
 
   team.employees.forEach((emp, i) => {
@@ -646,7 +645,7 @@ function renderTeamView(name) {
       <td style="font-weight:600; ${renewals[key] ? 'color:#1565C0;' : 'color:#ccc;'}">
         ${renewals[key] ? '갱신' : '-'}
       </td>
-      <td class="col-gap">
+      <td>
         <button class="btn ${done ? 'btn-disabled' : 'btn-primary'}"
           ${done ? 'disabled' : `onclick="openForm('${name}','${emp}',false)"`}>
           제출하기
@@ -658,15 +657,15 @@ function renderTeamView(name) {
           수정하기
         </button>
       </td>
-      <td style="text-align:center;">
+      <td>
         <span class="status-chip ${done ? 'status-done' : 'status-pending'}">
           ${done ? '&#10003; 완료' : '미제출'}
         </span>
       </td>
-      <td style="text-align:center;">
+      <td>
         <input type="checkbox" ${interviewed ? 'checked' : ''} onchange="toggleInterview('${name}','${emp}',this.checked)" style="width:16px; height:16px; cursor:pointer;">
       </td>
-      <td style="text-align:center;">
+      <td>
         <button class="btn btn-small" style="color:#C62828; border-color:#ddd;" onclick="deleteEmployee('${name}','${emp}')">삭제</button>
       </td>
     </tr>`;

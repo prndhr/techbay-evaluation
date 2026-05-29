@@ -617,17 +617,16 @@ function renderTeamView(name) {
 
   html += `<table class="emp-table">
     <thead><tr>
-      <th style="width:36px;">No.</th>
-      <th style="width:70px;">닉네임</th>
-      <th style="width:60px;">이름</th>
-      <th style="width:70px; text-align:center;">입사일</th>
-      <th style="width:44px; text-align:center;">갱신</th>
-      <th><!-- spacer --></th>
-      <th style="width:80px;">제출하기</th>
-      <th style="width:80px;">수정하기</th>
-      <th style="width:74px; text-align:center;">제출 여부</th>
-      <th style="width:44px; text-align:center;">면담</th>
-      <th style="width:44px; text-align:center;">삭제</th>
+      <th style="width:43px;">No.</th>
+      <th style="width:84px;">닉네임</th>
+      <th style="width:72px;">이름</th>
+      <th style="width:84px; text-align:center;">입사일</th>
+      <th style="width:53px; text-align:center;">갱신</th>
+      <th style="width:96px;">제출하기</th>
+      <th style="width:96px;">수정하기</th>
+      <th style="width:89px; text-align:center;">제출 여부</th>
+      <th style="width:53px; text-align:center;">면담</th>
+      <th style="width:53px; text-align:center;">삭제</th>
     </tr></thead><tbody>`;
 
   team.employees.forEach((emp, i) => {
@@ -646,7 +645,6 @@ function renderTeamView(name) {
       <td style="text-align:center; font-weight:600; ${renewals[key] ? 'color:#1565C0;' : 'color:#ccc;'}">
         ${renewals[key] ? '갱신' : '-'}
       </td>
-      <td></td>
       <td>
         <button class="btn ${done ? 'btn-disabled' : 'btn-primary'}"
           ${done ? 'disabled' : `onclick="openForm('${name}','${emp}',false)"`}>

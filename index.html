@@ -436,7 +436,7 @@ function showLoading(msg) {
 // ─── 데이터 로드 ───
 
 async function loadPeriodData() {
-  showLoading('데이터 불러오는 중...');
+  isLoading = true;
 
   try {
     // 제출 데이터 + 대상자 명단 동시 조회

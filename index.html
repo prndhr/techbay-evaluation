@@ -837,7 +837,10 @@ function openForm(teamName, empName, isEdit) {
   </div>`;
 
   document.getElementById('modal').innerHTML = html;
-  document.getElementById('modalOverlay').classList.add('show');
+  const overlay = document.getElementById('modalOverlay');
+  overlay.classList.add('show');
+  overlay.scrollTop = 0;
+  document.getElementById('modal').scrollTop = 0;
   document.body.style.overflow = 'hidden';
 }
 

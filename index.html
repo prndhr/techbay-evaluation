@@ -423,7 +423,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbz8R-FfYr43rGpPlMYoasfD
 let submissions = {};
 let renewals = {};
 let currentTeam = null;
-let hrAuthenticated = false;
+let hrAuthenticated = false; // unused legacy
 let isLoading = false;
 
 // ─── API 호출 유틸 ───
@@ -994,13 +994,10 @@ document.getElementById('pwOverlay').addEventListener('click', function(e) {
 
 function openUploadModal() {
   // Require HR password first
-  if (!hrAuthenticated) {
-    const pw = prompt('HR 비밀번호를 입력해주세요:');
-    if (pw !== HR_PASSWORD) {
-      if (pw !== null) showToast('비밀번호가 일치하지 않습니다.');
-      return;
-    }
-    hrAuthenticated = true;
+  const pw = prompt('HR 비밀번호를 입력해주세요:');
+  if (pw !== HR_PASSWORD) {
+    if (pw !== null) showToast('비밀번호가 일치하지 않습니다.');
+    return;
   }
 
   const modal = document.getElementById('uploadModal');

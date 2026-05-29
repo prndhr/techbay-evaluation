@@ -50,7 +50,7 @@
   .team-header .subtitle { font-size:13px; color:#888; margin-left:12px; }
 
   /* ── Employee Table ── */
-  .emp-table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); table-layout:fixed; }
+  .emp-table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); }
   .emp-table thead th { background:#fafafa; font-size:12px; font-weight:600; color:#666; padding:10px 8px; text-align:left; border-bottom:1px solid #e8e8e8; white-space:nowrap; }
   .emp-table tbody td { padding:10px 8px; border-bottom:1px solid #f0f0f0; font-size:14px; vertical-align:middle; white-space:nowrap; }
   .emp-table tbody tr:last-child td { border-bottom:none; }
@@ -616,24 +616,12 @@ function renderTeamView(name) {
   </div>`;
 
   html += `<table class="emp-table">
-    <colgroup>
-      <col style="width:5%">
-      <col style="width:9%">
-      <col style="width:7%">
-      <col style="width:8%">
-      <col style="width:6%">
-      <col style="width:13%">
-      <col style="width:13%">
-      <col style="width:13%">
-      <col style="width:13%">
-      <col style="width:13%">
-    </colgroup>
     <thead><tr>
       <th>No.</th>
       <th>닉네임</th>
       <th>이름</th>
-      <th style="text-align:center;">입사일</th>
-      <th style="text-align:center;">갱신</th>
+      <th>입사일</th>
+      <th style="padding-right:48px;">갱신</th>
       <th style="text-align:center;">제출하기</th>
       <th style="text-align:center;">수정하기</th>
       <th style="text-align:center;">제출 여부</th>
@@ -653,8 +641,8 @@ function renderTeamView(name) {
       <td style="color:#888;">${i + 1}</td>
       <td style="font-weight:600;">${nickname || '-'}</td>
       <td style="color:#555;">${emp}</td>
-      <td style="text-align:center; font-size:12px; color:#666;">${displayDate}</td>
-      <td style="text-align:center; font-weight:600; ${renewals[key] ? 'color:#1565C0;' : 'color:#ccc;'}">
+      <td style="font-size:12px; color:#666;">${displayDate}</td>
+      <td style="text-align:center; padding-right:48px; font-weight:600; ${renewals[key] ? 'color:#1565C0;' : 'color:#ccc;'}">
         ${renewals[key] ? '갱신' : '-'}
       </td>
       <td>

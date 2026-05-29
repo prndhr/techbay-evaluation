@@ -622,7 +622,8 @@ function renderTeamView(name) {
       <th style="width:70px;">이름</th>
       <th style="width:70px; text-align:center;">입사일</th>
       <th style="width:70px; text-align:center;">갱신</th>
-      <th style="width:80px; text-align:center; padding-left:40px;">제출하기</th>
+      <th style="width:40px; border:none; background:transparent;"></th>
+      <th style="width:80px; text-align:center;">제출하기</th>
       <th style="width:80px; text-align:center;">수정하기</th>
       <th style="width:80px; text-align:center;">제출 여부</th>
       <th style="width:80px; text-align:center;">면담</th>
@@ -645,7 +646,8 @@ function renderTeamView(name) {
       <td style="text-align:center; font-weight:600; ${renewals[key] ? 'color:#1565C0;' : 'color:#ccc;'}">
         ${renewals[key] ? '갱신' : '-'}
       </td>
-      <td style="padding-left:40px;">
+      <td style="border:none; background:transparent;"></td>
+      <td>
         <button class="btn ${done ? 'btn-disabled' : 'btn-primary'}"
           ${done ? 'disabled' : `onclick="openForm('${name}','${emp}',false)"`}>
           제출하기

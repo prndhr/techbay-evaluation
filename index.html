@@ -620,10 +620,11 @@ function renderTeamView(name) {
       <th>No.</th>
       <th>닉네임</th>
       <th>이름</th>
-      <th>입사일</th>
       <th>갱신</th>
-      <th style="padding-right:28px;">제출하기</th>
-      <th style="padding-right:28px;">수정하기</th>
+      <th>입사일</th>
+      <th></th>
+      <th>제출하기</th>
+      <th>수정하기</th>
       <th>제출 여부</th>
       <th>면담</th>
       <th>삭제</th>
@@ -641,10 +642,11 @@ function renderTeamView(name) {
       <td style="color:#888;">${i + 1}</td>
       <td style="font-weight:600;">${nickname || '-'}</td>
       <td style="color:#555;">${emp}</td>
-      <td style="font-size:12px; color:#666;">${displayDate}</td>
       <td style="font-weight:600; ${renewals[key] ? 'color:#1565C0;' : 'color:#ccc;'}">
         ${renewals[key] ? '갱신' : '-'}
       </td>
+      <td style="font-size:12px; color:#666;">${displayDate}</td>
+      <td></td>
       <td>
         <button class="btn ${done ? 'btn-disabled' : 'btn-primary'}"
           ${done ? 'disabled' : `onclick="openForm('${name}','${emp}',false)"`}>

@@ -1395,7 +1395,7 @@ function renderHistoryCard(sub) {
   let html = `<div class="history-card" data-team="${sub.team}" data-grade="${sub.grade}">
     <div class="hc-header">
       <div>
-        <span class="hc-name">${sub.employee}</span>
+        <span class="hc-name">${sub.employee}${DEFAULT_NICKNAMES[sub.team + '::' + sub.employee] ? ' (' + DEFAULT_NICKNAMES[sub.team + '::' + sub.employee] + ')' : ''}</span>
         <span class="hc-team" style="margin-left:8px;">${sub.team}</span>
       </div>
       <span class="hc-grade grade-${sub.grade}">${sub.grade}</span>

@@ -1329,7 +1329,7 @@ function renderHistoryCard(sub) {
     html += `<div class="hc-comment" style="margin-top:8px;"><strong>잘한 점:</strong> ${sub.strength || '-'}</div>`;
     html += `<div class="hc-comment" style="margin-top:4px;"><strong>아쉬운 점:</strong> ${sub.weakness || '-'}</div>`;
   }
-  html += `<div class="hc-comment">${sub.comment}</div>`;
+  html += `<div class="hc-comment">${sub.comment}</div>
     <div class="hc-time">제출: ${timeStr}</div>
   </div>`;
   return html;

@@ -267,6 +267,20 @@ const COMMON_QUESTIONS = [
 
 const COMMON_LABELS = ["근태", "적극성", "팔로워쉽", "커뮤니케이션", "헌신"];
 
+const COMMON_HINTS = [
+  "5점 : 그런 적이 단 한 번도 없었음",
+  "5점 : 항상 일관되게 그렇다",
+  "5점 : 교정적 피드백도 적극적으로 수용함",
+  "5점 : 친절하고 명확하고 간결한 커뮤니케이션을 갖추고 있음",
+  "5점 : 감동적인 수준"
+];
+
+// 별도 트랙 대상자 (직무 역량을 서술형으로 평가)
+const SPECIAL_TRACK_EMPLOYEES = new Set([
+  "UDTT정비팀::구서영",
+  "UDTT정비팀::류현석"
+]);
+
 const TEAMS = {
   "스튜디오팀(촬영)": {
     part: "인증파트",
@@ -725,32 +739,64 @@ function openForm(teamName, empName, isEdit) {
   const key = getKey(teamName, empName);
   const prev = isEdit ? submissions[key] : null;
 
-  const allQ = [...COMMON_QUESTIONS, ...team.questions];
+  const isSpecialTrack = SPECIAL_TRACK_EMPLOYEES.has(key);
+  const allQ = isSpecialTrack ? [...COMMON_QUESTIONS] : [...COMMON_QUESTIONS, ...team.questions];
 
   const formNickname = DEFAULT_NICKNAMES[key] || '';
   const formDisplayName = formNickname ? `${formNickname} (${empName})` : empName;
   let html = `<button onclick="closeModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:22px; color:#999; cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:6px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">&times;</button>
     <h3>${formDisplayName} 평가</h3>
-    <div class="modal-sub">${teamName} · ${currentPeriod.label} 인사 평가 ${isEdit ? '(수정)' : ''}</div>`;
+    <div class="modal-sub">${teamName} · ${currentPeriod.label} 인사 평가 ${isEdit ? '(수정)' : ''}${isSpecialTrack ? ' · 별도 트랙' : ''}</div>`;
 
-  // Common questions
-  html += `<div class="form-section">
-    <div class="form-section-title">공통 평가 항목</div>`;
-  COMMON_QUESTIONS.forEach((q, i) => {
-    const val = prev ? prev.scores[i] : null;
-    html += renderScoreQuestion(i, q, val);
-  });
-  html += `</div>`;
+  // Common questions (근태 + 공통역량) with hints
+  if (isSpecialTrack) {
+    html += `<div class="form-section">
+      <div class="form-section-title">근태 평가</div>`;
+    for (let i = 0; i < 2; i++) {
+      const val = prev ? prev.scores[i] : null;
+      html += renderScoreQuestion(i, COMMON_QUESTIONS[i], val, COMMON_HINTS[i]);
+    }
+    html += `</div>`;
 
-  // Team-specific questions
-  html += `<div class="form-section">
-    <div class="form-section-title">직무 역량 평가 항목</div>`;
-  team.questions.forEach((q, i) => {
-    const idx = COMMON_QUESTIONS.length + i;
-    const val = prev ? prev.scores[idx] : null;
-    html += renderScoreQuestion(idx, q, val);
-  });
-  html += `</div>`;
+    html += `<div class="form-section">
+      <div class="form-section-title">공통 역량 평가</div>`;
+    for (let i = 2; i < 5; i++) {
+      const val = prev ? prev.scores[i] : null;
+      html += renderScoreQuestion(i, COMMON_QUESTIONS[i], val, COMMON_HINTS[i]);
+    }
+    html += `</div>`;
+
+    // 서술형 직무 역량
+    html += `<div class="form-section">
+      <div class="form-section-title">[서술형] 직무 역량 평가</div>
+      <div class="form-group">
+        <label class="form-label"><span class="q-num">1</span>(잘한 점) 피평가자의 강점 역량에 대해 작성해주세요. (최소 1가지 이상)</label>
+        <textarea class="form-textarea" id="strengthInput" placeholder="강점 역량을 작성해주세요...">${prev && prev.strength ? prev.strength : ''}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label"><span class="q-num">2</span>(아쉬운 점) 피평가자가 개발 필요한 직무 역량에 대해 작성해주세요. (최소 1가지 이상)</label>
+        <textarea class="form-textarea" id="weaknessInput" placeholder="개발 필요한 역량을 작성해주세요...">${prev && prev.weakness ? prev.weakness : ''}</textarea>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="form-section">
+      <div class="form-section-title">공통 평가 항목</div>`;
+    COMMON_QUESTIONS.forEach((q, i) => {
+      const val = prev ? prev.scores[i] : null;
+      html += renderScoreQuestion(i, q, val, COMMON_HINTS[i]);
+    });
+    html += `</div>`;
+
+    // Team-specific questions
+    html += `<div class="form-section">
+      <div class="form-section-title">직무 역량 평가 항목</div>`;
+    team.questions.forEach((q, i) => {
+      const idx = COMMON_QUESTIONS.length + i;
+      const val = prev ? prev.scores[idx] : null;
+      html += renderScoreQuestion(idx, q, val);
+    });
+    html += `</div>`;
+  }
 
   // Grade
   html += `<div class="form-section">
@@ -856,10 +902,13 @@ function openForm(teamName, empName, isEdit) {
   document.body.style.overflow = 'hidden';
 }
 
-function renderScoreQuestion(idx, q, val) {
+function renderScoreQuestion(idx, q, val, hint) {
   let html = `<div class="form-group">
-    <label class="form-label"><span class="q-num">${idx + 1}</span>${q.replace(/\n/g, '<br>')}</label>
-    <div class="score-group">`;
+    <label class="form-label"><span class="q-num">${idx + 1}</span>${q.replace(/\n/g, '<br>')}</label>`;
+  if (hint) {
+    html += `<div style="font-size:12px; color:#888; margin-bottom:8px; margin-left:28px;">${hint}</div>`;
+  }
+  html += `<div class="score-group">`;
   for (let s = 1; s <= 5; s++) {
     html += `<button type="button" class="score-btn ${val === s ? 'selected' : ''}"
       data-q="${idx}" data-score="${s}" onclick="selectScore(this)">${s}</button>`;
@@ -879,11 +928,23 @@ function selectGrade(btn) {
 }
 
 async function submitForm(teamName, empName, totalQ) {
+  const key = getKey(teamName, empName);
+  const isSpecialTrack = SPECIAL_TRACK_EMPLOYEES.has(key);
+
   const scores = [];
   for (let i = 0; i < totalQ; i++) {
     const selected = document.querySelector(`.score-btn[data-q="${i}"].selected`);
     if (!selected) { showToast(`${i + 1}번 항목의 점수를 선택해주세요.`); return; }
     scores.push(parseInt(selected.dataset.score));
+  }
+
+  // 별도 트랙: 서술형 검증
+  let strength = '', weakness = '';
+  if (isSpecialTrack) {
+    strength = document.getElementById('strengthInput').value.trim();
+    weakness = document.getElementById('weaknessInput').value.trim();
+    if (!strength) { showToast('잘한 점(강점 역량)을 작성해주세요.'); return; }
+    if (!weakness) { showToast('아쉬운 점(개발 필요 역량)을 작성해주세요.'); return; }
   }
 
   const gradeBtn = document.querySelector('.grade-btn.selected');
@@ -897,7 +958,6 @@ async function submitForm(teamName, empName, totalQ) {
   submitBtn.classList.add('loading');
   submitBtn.textContent = '저장 중...';
 
-  const key = getKey(teamName, empName);
   const payload = {
     team: teamName,
     employee: empName,
@@ -907,6 +967,12 @@ async function submitForm(teamName, empName, totalQ) {
     timestamp: new Date().toISOString(),
     totalScore: scores.reduce((a, b) => a + b, 0)
   };
+
+  if (isSpecialTrack) {
+    payload.specialTrack = true;
+    payload.strength = strength;
+    payload.weakness = weakness;
+  }
 
   try {
     await saveSubmission(teamName, empName, payload);
@@ -1259,8 +1325,12 @@ function renderHistoryCard(sub) {
     }
   });
   html += `</div>
-    <div style="font-size:12px; color:#888;">총점: <strong style="color:#222;">${sub.totalScore}점</strong> / ${sub.scores.length * 5}점</div>
-    <div class="hc-comment">${sub.comment}</div>
+    <div style="font-size:12px; color:#888;">총점: <strong style="color:#222;">${sub.totalScore}점</strong> / ${sub.scores.length * 5}점</div>`;
+  if (sub.specialTrack) {
+    html += `<div class="hc-comment" style="margin-top:8px;"><strong>잘한 점:</strong> ${sub.strength || '-'}</div>`;
+    html += `<div class="hc-comment" style="margin-top:4px;"><strong>아쉬운 점:</strong> ${sub.weakness || '-'}</div>`;
+  }
+  html += `<div class="hc-comment">${sub.comment}</div>`;
     <div class="hc-time">제출: ${timeStr}</div>
   </div>`;
   return html;

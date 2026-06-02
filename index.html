@@ -777,9 +777,15 @@ function renderTeamView(name) {
   const submitted = team.employees.filter(e => submissions[getKey(name, e)]).length;
 
   let html = `<div class="team-header">
-    <div style="display:flex;align-items:baseline;">
-      <h3>${name}</h3>
-      <span class="subtitle">평가 대상 ${team.employees.length}명 · 제출 완료 ${submitted}명</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:baseline;">
+        <h3>${name}</h3>
+        <span class="subtitle">평가 대상 ${team.employees.length}명 · 제출 완료 ${submitted}명</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-hr btn-small" onclick="showReviewLink('${name}')">팀원 리뷰지 전달하기</button>
+        <button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')">제출 내역 조회 (HR)</button>
+      </div>
     </div>
   </div>`;
 
@@ -847,10 +853,6 @@ function renderTeamView(name) {
 
   html += `</tbody></table>`;
 
-  html += `<div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
-    <button class="btn btn-hr btn-small" onclick="showReviewLink('${name}')">팀원 리뷰지 전달하기</button>
-    <button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')">제출 내역 조회 (HR)</button>
-  </div>`;
 
 
   main.innerHTML = html;

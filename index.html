@@ -1838,7 +1838,7 @@ function renderSelfReviewForm(teamName) {
     <div class="form-section-title">1. 기본 인적사항</div>
     <div class="form-group">
       <label class="form-label">영어 닉네임 <span style="color:#C62828;">*</span></label>
-      <input type="text" class="sr-text-input" id="srNickname" placeholder="예: hannah" required>
+      <input type="text" class="sr-text-input" id="srNickname" placeholder="예: danny" required>
     </div>
     <div class="form-group">
       <label class="form-label">소속 팀 <span style="color:#C62828;">*</span></label>
@@ -1887,14 +1887,16 @@ function renderSelfReviewForm(teamName) {
 
       <table class="grade-criteria" style="margin-bottom:20px;">
         <thead><tr>
-          <th style="background:#fafafa; color:#333; width:100px;"></th>
-          <th>S</th><th>A</th><th>B</th><th>C</th><th>D</th>
+          <th style="background:#6B8CC7; color:#fff; width:80px;">점수</th>
+          <th style="background:#6B8CC7; color:#fff; width:100px;">영향력</th>
+          <th style="background:#6B8CC7; color:#fff;">부연 설명</th>
         </tr></thead>
         <tbody>
-          <tr><td>PRND way</td><td class="gc-s">귀감이 됨</td><td>충실히 지킴</td><td>대부분 지킴</td><td>종종 안 지킴</td><td>거의 안 지킴</td></tr>
-          <tr><td>영향력</td><td class="gc-s">감동을 선사</td><td>긍정적 영향</td><td>개인에서<br>그치는 수준</td><td>영향력 없음</td><td>주변 동료가<br>힘들어함</td></tr>
-          <tr><td>결과물</td><td class="gc-s"><i>Wow</i></td><td><i>Great</i></td><td><i>Good</i></td><td><i>Soso</i></td><td><i>Bad</i></td></tr>
-          <tr><td>미래 기대치</td><td class="gc-s">리더로 도약</td><td>뛰어난 실무자</td><td>좋은 동료</td><td>특별한 기대 없음</td><td>이별 고려</td></tr>
+          <tr><td style="font-size:20px; font-weight:700;">5</td><td style="font-weight:700;">Wow</td><td>나의 성과와 태도는 팀에 감동을 주는 수준이다.</td></tr>
+          <tr><td style="font-size:20px; font-weight:700;">4</td><td style="font-weight:700;">Great</td><td>나의 성과와 태도는 팀에 꽤 긍정적 영향을 주는 수준이다.</td></tr>
+          <tr><td style="font-size:20px; font-weight:700;">3</td><td style="font-weight:700;">Good</td><td>나의 성과와 태도는 협업에 지장이 없다.</td></tr>
+          <tr><td style="font-size:20px; font-weight:700;">2</td><td style="font-weight:700;">Soso</td><td>나의 성과와 태도는 종종 개선이 필요하다.</td></tr>
+          <tr><td style="font-size:20px; font-weight:700;">1</td><td style="font-weight:700;">Bad</td><td>나의 성과와 태도는 많이 부족하다.</td></tr>
         </tbody>
       </table>
 
@@ -1905,7 +1907,7 @@ function renderSelfReviewForm(teamName) {
   html += `</div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" style="margin-top:60px;">
       <label class="form-label" style="font-weight:600;">나의 강점 (복수 선택 가능) <span style="color:#C62828;">*</span></label>
       <div class="sr-checkbox-group" id="srStrengths">`;
   strengthOptions.forEach(opt => {

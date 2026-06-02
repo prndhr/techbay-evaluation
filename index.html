@@ -587,6 +587,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbz8R-FfYr43rGpPlMYoasfD
 
 let submissions = {};
 let renewals = {};
+let selfReviewStatus = {};
 let currentTeam = null;
 let hrAuthenticated = false; // unused legacy
 let isLoading = false;
@@ -628,13 +629,15 @@ async function loadPeriodData() {
 
   try {
     // 제출 데이터 + 대상자 명단 동시 조회
-    const [subData, empData] = await Promise.all([
+    const [subData, empData, srData] = await Promise.all([
       apiGet('getSubmissions'),
-      apiGet('getEmployees')
+      apiGet('getEmployees'),
+      apiGet('getSelfReviewStatus').catch(() => ({}))
     ]);
 
     submissions = subData || {};
     renewals = empData.renewals || {};
+    selfReviewStatus = srData || {};
 
     // 기본 명단 적용
     Object.keys(TEAMS).forEach(key => {
@@ -791,6 +794,7 @@ function renderTeamView(name) {
       <th>제출하기</th>
       <th>수정하기</th>
       <th>제출 여부</th>
+      <th>팀원 제출 상황</th>
       <th>면담</th>
       <th>삭제</th>
     </tr></thead><tbody>`;
@@ -828,6 +832,9 @@ function renderTeamView(name) {
         <span class="status-chip ${done ? 'status-done' : 'status-pending'}">
           ${done ? '&#10003; 완료' : '미제출'}
         </span>
+      </td>
+      <td>
+        <input type="checkbox" ${selfReviewStatus[key] ? 'checked' : ''} disabled style="width:16px; height:16px;">
       </td>
       <td>
         <input type="checkbox" ${interviewed ? 'checked' : ''} onchange="toggleInterview('${name}','${emp}',this.checked)" style="width:16px; height:16px; cursor:pointer;">

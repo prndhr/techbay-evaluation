@@ -1858,17 +1858,21 @@ function renderSelfReviewForm(teamName) {
   </div>`;
 
   // Section 1: 기본 인적사항
+  let nicknameOptions = '<option value="">-- 이름을 선택해주세요 --</option>';
+  Object.keys(DEFAULT_NICKNAMES).forEach(function(k) {
+    if (k.startsWith(teamName + '::')) {
+      const empName = k.split('::')[1];
+      const nick = DEFAULT_NICKNAMES[k];
+      nicknameOptions += '<option value="' + nick + '">' + nick + ' (' + empName + ')</option>';
+    }
+  });
+
   html += `<div class="sr-section">
     <div class="form-section-title">1. 기본 인적사항</div>
     <div class="form-group">
       <label class="form-label">이름 선택 <span style="color:#C62828;">*</span></label>
       <select class="sr-text-input" id="srNickname" required>
-        <option value="">-- 이름을 선택해주세요 --</option>
-        ${Object.keys(DEFAULT_NICKNAMES).filter(k => k.startsWith(teamName + '::')).map(k => {
-          const empName = k.split('::')[1];
-          const nick = DEFAULT_NICKNAMES[k];
-          return '<option value="' + nick + '">' + nick + ' (' + empName + ')</option>';
-        }).join('')}
+        ${nicknameOptions}
       </select>
     </div>
     <div class="form-group">

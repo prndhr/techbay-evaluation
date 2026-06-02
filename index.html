@@ -1777,9 +1777,16 @@ function getSelfReviewCommon(teamName) {
   return questions;
 }
 
+function encodeTeam(name) {
+  return btoa(unescape(encodeURIComponent(name))).replace(/=/g, '');
+}
+function decodeTeam(code) {
+  try { return decodeURIComponent(escape(atob(code + '=='.slice(0, (4 - code.length % 4) % 4)))); } catch(e) { return null; }
+}
+
 function showReviewLink(teamName) {
   const base = window.location.href.split('?')[0];
-  const url = base + '?review=' + encodeURIComponent(teamName);
+  const url = base + '?r=' + encodeTeam(teamName);
   document.getElementById('reviewLinkInput').value = url;
   document.getElementById('linkModalOverlay').classList.add('show');
 }
@@ -2111,9 +2118,11 @@ document.addEventListener('click', function(e) {
 (async function init() {
   // Check for self-review mode
   const urlParams = new URLSearchParams(window.location.search);
-  const reviewTeam = urlParams.get('review');
-  if (reviewTeam) {
-    renderSelfReviewForm(decodeURIComponent(reviewTeam));
+  const reviewCode = urlParams.get('r') || urlParams.get('review');
+  if (reviewCode) {
+    const reviewTeam = urlParams.get('review') ? decodeURIComponent(urlParams.get('review')) : decodeTeam(reviewCode);
+    if (!reviewTeam || !TEAMS[reviewTeam]) { document.body.innerHTML = '<div style="text-align:center;padding:80px;font-size:16px;color:#888;">유효하지 않은 링크입니다.</div>'; return; }
+    renderSelfReviewForm(reviewTeam);
     return;
   }
 

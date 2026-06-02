@@ -1803,7 +1803,7 @@ function decodeTeam(code) {
 
 function showReviewLink(teamName) {
   const base = window.location.href.split('?')[0];
-  const url = base + '?r=' + encodeTeam(teamName);
+  const url = base + '?r=' + encodeTeam(teamName) + '&v=3';
   document.getElementById('reviewLinkInput').value = url;
   document.getElementById('linkModalOverlay').classList.add('show');
 }

@@ -895,7 +895,7 @@ function renderTeamView(name) {
         </span>
       </td>
       <td>
-        <input type="checkbox" ${selfReviewStatus[name + '::' + nickname] ? 'checked' : ''} disabled style="width:16px; height:16px; accent-color:#1565C0;">
+        <span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:${selfReviewStatus[name + '::' + nickname] ? '#424242' : '#e0e0e0'};text-align:center;line-height:18px;color:#fff;font-size:13px;font-weight:bold;">${selfReviewStatus[name + '::' + nickname] ? '✓' : ''}</span>
       </td>
       <td>
         <input type="checkbox" ${interviewed ? 'checked' : ''} onchange="toggleInterview('${name}','${emp}',this.checked)" style="width:16px; height:16px; cursor:pointer;">

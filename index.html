@@ -839,6 +839,7 @@ function renderTeamView(name) {
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-hr btn-small" onclick="showReviewLink('${name}')">팀원 리뷰지 전달하기</button>
+        <button class="btn btn-hr btn-small" onclick="showSpecialTrackLink('${name}')" style="background:#fff3e0; border-color:#FF9800; color:#E65100;">별도 트랙 리뷰지 전달하기</button>
         <button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')">제출 내역 조회 (HR)</button>
       </div>
     </div>
@@ -1913,6 +1914,13 @@ function showReviewLink(teamName) {
   document.getElementById('linkModalOverlay').classList.add('show');
 }
 
+function showSpecialTrackLink(teamName) {
+  const base = window.location.href.split('?')[0];
+  const url = base + '?s=' + encodeTeam(teamName) + '&v=3';
+  document.getElementById('reviewLinkInput').value = url;
+  document.getElementById('linkModalOverlay').classList.add('show');
+}
+
 function copyReviewLink() {
   const input = document.getElementById('reviewLinkInput');
   input.select();
@@ -2200,6 +2208,246 @@ async function submitSelfReview(teamName, totalQ) {
 }
 
 // ══════════════════════════════════════════════
+// 별도 트랙 셀프 리뷰
+// ══════════════════════════════════════════════
+
+function renderSpecialTrackSelfReview(teamName) {
+  document.querySelector('.header').style.display = 'none';
+  document.querySelector('.container').style.display = 'none';
+  document.getElementById('selfReviewPage').style.display = 'block';
+
+  const attendance = getSelfReviewAttendance(teamName);
+  const common = getSelfReviewCommon(teamName);
+
+  let qIdx = 0;
+  let html = `<div class="self-review-page">`;
+
+  // Header
+  html += `<div class="sr-header">
+    <h1>B2C 팀원 셀프 리뷰 · 별도 트랙</h1>
+    <p class="sr-subtitle">${teamName} 팀원으로서 자신의 업무 성과와 태도를 점검해보는 시간입니다.</p>
+  </div>`;
+
+  // Instructions
+  html += `<div class="sr-instructions">
+    <h3>작성 전 꼭 읽어주세요</h3>
+    <ul>
+      <li>본 설문은 <strong>별도 트랙</strong> 대상자를 위한 셀프 리뷰입니다.</li>
+      <li>근태·공통 역량은 <strong>1점(매우 부족)~5점(매우 우수)</strong>으로 평가하고, 직무 역량은 <strong>서술형</strong>으로 작성해주세요.</li>
+      <li>PC 환경에서 작성하시는 것을 권장합니다.</li>
+      <li>제출 후에는 수정이 불가하니, 신중히 작성해주세요.</li>
+    </ul>
+  </div>`;
+
+  // Section 1: 기본 인적사항
+  html += `<div class="sr-section">
+    <div class="form-section-title">1. 기본 인적사항</div>
+    <div class="form-group">
+      <label class="form-label">이름을 작성해주세요. <span style="color:#C62828;">*</span></label>
+      <input type="text" class="sr-text-input" id="srNickname" placeholder="영어 소문자 닉네임" required>
+      <div style="margin-top:8px; font-size:12px; color:#666; line-height:1.8;">
+        <span style="color:#1565C0; font-weight:600;">예시)</span> danny <span style="color:#2E7D32; font-weight:600;">(O)</span> - 영어 소문자로만 작성해주세요.<br>
+        대니, Danny, DANNY <span style="color:#C62828; font-weight:600;">(X)</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">소속 팀 <span style="color:#C62828;">*</span></label>
+      <input type="text" class="sr-text-input" id="srTeamInput" placeholder="예: ${teamName}" value="${teamName}" required>
+    </div>
+  </div>`;
+
+  // Section 2: 근태 평가
+  html += `<div class="sr-section">
+    <div class="form-section-title">2. 근태 평가</div>`;
+  attendance.forEach(item => {
+    html += renderSelfReviewScoreQ(qIdx, item.q, item.hint);
+    qIdx++;
+  });
+  html += `</div>`;
+
+  // Section 3: 공통 역량 평가
+  html += `<div class="sr-section">
+    <div class="form-section-title">3. 공통 역량 평가</div>`;
+  common.forEach(item => {
+    html += renderSelfReviewScoreQ(qIdx, item.q, item.hint);
+    qIdx++;
+  });
+  html += `</div>`;
+
+  // Section 4: [서술형] 직무 역량 평가
+  html += `<div class="sr-section">
+    <div class="form-section-title">4. [서술형] 직무 역량 평가</div>
+    <div class="form-group">
+      <label class="form-label"><span class="q-num">1</span>(잘한 점) 나의 강점 역량에 대해 작성해주세요. (최소 1가지 이상) <span style="color:#C62828;">*</span></label>
+      <textarea class="form-textarea" id="stStrength" placeholder="강점 역량을 작성해주세요..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label"><span class="q-num">2</span>(아쉬운 점) 개발이 필요한 직무 역량에 대해 작성해주세요. (최소 1가지 이상) <span style="color:#C62828;">*</span></label>
+      <textarea class="form-textarea" id="stWeakness" placeholder="개발 필요한 역량을 작성해주세요..."></textarea>
+    </div>
+  </div>`;
+
+  // Section 5: 종합 평가
+  const strengthOptions = ['커뮤니케이션', '팔로워쉽', '근태 관리', '작업 속도', '작업 퀄리티', '작업량'];
+
+  html += `<div class="sr-section">
+    <div class="form-section-title">5. 종합 평가</div>
+
+    <div class="form-group">
+      <label class="form-label" style="font-size:14px; font-weight:700;">최종 점수를 선택해주세요. <span style="color:#C62828;">*</span></label>
+      <div style="font-size:13px; color:#555; line-height:1.7; margin-bottom:20px;">
+        아래 등급표를 참고하여, 자신에게 해당하는 점수를 선택해주세요.
+      </div>
+
+      <div class="score-group" id="srFinalScoreGroup" style="margin-bottom:28px;">`;
+  for (let s = 1; s <= 5; s++) {
+    html += `<button type="button" class="score-btn" data-score="${s}" onclick="selectSrFinalScore(this)">${s}</button>`;
+  }
+  html += `</div>
+
+      <table class="grade-criteria">
+        <thead><tr>
+          <th style="background:#6B8CC7; color:#fff; width:80px;">점수</th>
+          <th style="background:#6B8CC7; color:#fff; width:100px;">영향력</th>
+          <th style="background:#6B8CC7; color:#fff;">부연 설명</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="font-size:20px; font-weight:700;">5</td><td style="font-weight:700;">Wow</td><td>나의 성과와 태도는 팀에 감동을 주는 수준이다.</td></tr>
+          <tr><td style="font-size:20px; font-weight:700;">4</td><td style="font-weight:700;">Great</td><td>나의 성과와 태도는 팀에 꽤 긍정적 영향을 주는 수준이다.</td></tr>
+          <tr><td style="font-size:20px; font-weight:700;">3</td><td style="font-weight:700;">Good</td><td>나의 성과와 태도는 협업에 지장이 없다.</td></tr>
+          <tr><td style="font-size:20px; font-weight:700;">2</td><td style="font-weight:700;">Soso</td><td>나의 성과와 태도는 종종 개선이 필요하다.</td></tr>
+          <tr><td style="font-size:20px; font-weight:700;">1</td><td style="font-weight:700;">Bad</td><td>나의 성과와 태도는 많이 부족하다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="form-group" style="margin-top:60px;">
+      <label class="form-label" style="font-weight:600;">나의 강점 (복수 선택 가능) <span style="color:#C62828;">*</span></label>
+      <div class="sr-checkbox-group" id="srStrengths">`;
+  strengthOptions.forEach(opt => {
+    html += `<label class="sr-checkbox-label" onclick="event.preventDefault(); this.classList.toggle('checked')"><input type="checkbox" value="${opt}">${opt}</label>`;
+  });
+  html += `</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="font-weight:600;">나의 개선점 (복수 선택 가능) <span style="color:#C62828;">*</span></label>
+      <div class="sr-checkbox-group" id="srImprovements">`;
+  strengthOptions.forEach(opt => {
+    html += `<label class="sr-checkbox-label" onclick="event.preventDefault(); this.classList.toggle('checked')"><input type="checkbox" value="${opt}">${opt}</label>`;
+  });
+  html += `</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="font-weight:600;">리더에게 궁금한 점 작성하기 <span style="color:#C62828;">*</span></label>
+      <textarea class="form-textarea" id="srLeaderQuestion" placeholder="최소 2가지 이상 작성해주세요."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="font-weight:600;">그 외 하고 싶은 말씀 (자유기재)</label>
+      <textarea class="form-textarea" id="srFreeComment" placeholder="없으면 '없습니다'로 작성해주세요."></textarea>
+    </div>
+  </div>`;
+
+  // Submit
+  html += `<div class="sr-submit-area">
+    <button class="sr-submit-btn" onclick="submitSpecialTrackSelfReview('${teamName}', ${qIdx})">제출하기</button>
+  </div>`;
+
+  html += `</div>`;
+  document.getElementById('selfReviewPage').innerHTML = html;
+}
+
+async function submitSpecialTrackSelfReview(teamName, totalQ) {
+  const nickname = document.getElementById('srNickname').value.trim();
+  if (!nickname) { showToast('이름을 작성해주세요.'); return; }
+  if (nickname !== nickname.toLowerCase() || !/^[a-z]+$/.test(nickname)) { showToast('영어 소문자로만 작성해주세요. (예: danny)'); return; }
+
+  const teamInput = document.getElementById('srTeamInput').value.trim();
+  if (!teamInput) { showToast('소속 팀을 입력해주세요.'); return; }
+
+  const attendance = getSelfReviewAttendance(teamName);
+  const common = getSelfReviewCommon(teamName);
+
+  const attendanceScores = [];
+  const commonScores = [];
+  let qIdx = 0;
+
+  for (let i = 0; i < attendance.length; i++) {
+    const sel = document.querySelector(`.score-btn[data-q="sr${qIdx}"].selected`);
+    if (!sel) { showToast(`${qIdx + 1}번 항목의 점수를 선택해주세요.`); return; }
+    attendanceScores.push(parseInt(sel.dataset.score));
+    qIdx++;
+  }
+
+  for (let i = 0; i < common.length; i++) {
+    const sel = document.querySelector(`.score-btn[data-q="sr${qIdx}"].selected`);
+    if (!sel) { showToast(`${qIdx + 1}번 항목의 점수를 선택해주세요.`); return; }
+    commonScores.push(parseInt(sel.dataset.score));
+    qIdx++;
+  }
+
+  // 서술형
+  const strength = document.getElementById('stStrength').value.trim();
+  if (!strength) { showToast('강점 역량을 작성해주세요.'); return; }
+  const weakness = document.getElementById('stWeakness').value.trim();
+  if (!weakness) { showToast('개발 필요한 역량을 작성해주세요.'); return; }
+
+  const finalScoreBtn = document.querySelector('#srFinalScoreGroup .score-btn.selected');
+  if (!finalScoreBtn) { showToast('최종 점수를 선택해주세요.'); return; }
+  const finalScore = parseInt(finalScoreBtn.dataset.score);
+
+  const strengths = [];
+  document.querySelectorAll('#srStrengths .sr-checkbox-label.checked input').forEach(inp => strengths.push(inp.value));
+  if (strengths.length === 0) { showToast('강점을 1개 이상 선택해주세요.'); return; }
+
+  const improvements = [];
+  document.querySelectorAll('#srImprovements .sr-checkbox-label.checked input').forEach(inp => improvements.push(inp.value));
+  if (improvements.length === 0) { showToast('개선점을 1개 이상 선택해주세요.'); return; }
+
+  const leaderQuestion = document.getElementById('srLeaderQuestion').value.trim();
+  if (!leaderQuestion) { showToast('리더에게 궁금한 점을 작성해주세요.'); return; }
+
+  const freeComment = document.getElementById('srFreeComment').value.trim() || '없습니다';
+
+  const submitBtn = document.querySelector('.sr-submit-btn');
+  submitBtn.classList.add('loading');
+  submitBtn.textContent = '제출 중...';
+
+  try {
+    await apiPost({
+      action: 'submitSpecialTrackSelfReview',
+      team: teamName,
+      nickname: nickname,
+      teamInput: teamInput,
+      attendanceScores: attendanceScores,
+      commonScores: commonScores,
+      strength: strength,
+      weakness: weakness,
+      finalScore: finalScore,
+      strengths: strengths,
+      improvements: improvements,
+      leaderQuestion: leaderQuestion,
+      freeComment: freeComment,
+      timestamp: new Date().toISOString()
+    });
+
+    document.getElementById('selfReviewPage').innerHTML = `<div class="self-review-page">
+      <div class="self-review-thankyou">
+        <div style="font-size:48px; margin-bottom:20px;">&#10003;</div>
+        <h2>제출이 완료되었습니다.</h2>
+        <p>감사합니다.</p>
+      </div>
+    </div>`;
+  } catch (err) {
+    submitBtn.classList.remove('loading');
+    submitBtn.textContent = '제출하기';
+    showToast('제출에 실패했습니다. 다시 시도해주세요.');
+  }
+}
+
+// ══════════════════════════════════════════════
 // PERIOD SELECTOR
 // ══════════════════════════════════════════════
 
@@ -2253,6 +2501,15 @@ document.addEventListener('click', function(e) {
 (async function init() {
   // Check for self-review mode
   const urlParams = new URLSearchParams(window.location.search);
+  // 별도 트랙 셀프 리뷰
+  const specialCode = urlParams.get('s');
+  if (specialCode) {
+    const specialTeam = decodeTeam(specialCode);
+    if (!specialTeam || !TEAMS[specialTeam]) { document.body.innerHTML = '<div style="text-align:center;padding:80px;font-size:16px;color:#888;">유효하지 않은 링크입니다.</div>'; return; }
+    renderSpecialTrackSelfReview(specialTeam);
+    return;
+  }
+
   const reviewCode = urlParams.get('r') || urlParams.get('review');
   if (reviewCode) {
     const reviewTeam = urlParams.get('review') ? decodeURIComponent(urlParams.get('review')) : decodeTeam(reviewCode);

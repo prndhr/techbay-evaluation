@@ -1861,8 +1861,15 @@ function renderSelfReviewForm(teamName) {
   html += `<div class="sr-section">
     <div class="form-section-title">1. 기본 인적사항</div>
     <div class="form-group">
-      <label class="form-label">영어 닉네임 <span style="color:#C62828;">*</span></label>
-      <input type="text" class="sr-text-input" id="srNickname" placeholder="예: danny" required>
+      <label class="form-label">이름 선택 <span style="color:#C62828;">*</span></label>
+      <select class="sr-text-input" id="srNickname" required>
+        <option value="">-- 이름을 선택해주세요 --</option>
+        ${Object.keys(DEFAULT_NICKNAMES).filter(k => k.startsWith(teamName + '::')).map(k => {
+          const empName = k.split('::')[1];
+          const nick = DEFAULT_NICKNAMES[k];
+          return '<option value="' + nick + '">' + nick + ' (' + empName + ')</option>';
+        }).join('')}
+      </select>
     </div>
     <div class="form-group">
       <label class="form-label">소속 팀 <span style="color:#C62828;">*</span></label>
@@ -1986,7 +1993,7 @@ function selectSrFinalScore(btn) {
 
 async function submitSelfReview(teamName, totalQ) {
   const nickname = document.getElementById('srNickname').value.trim();
-  if (!nickname) { showToast('영어 닉네임을 입력해주세요.'); return; }
+  if (!nickname) { showToast('이름을 선택해주세요.'); return; }
 
   const teamInput = document.getElementById('srTeamInput').value.trim();
   if (!teamInput) { showToast('소속 팀을 입력해주세요.'); return; }

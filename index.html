@@ -2062,6 +2062,11 @@ function renderSelfReviewForm(teamName) {
       <label class="form-label" style="font-weight:600;">리더에게 궁금한 점 작성하기 <span style="color:#C62828;">*</span></label>
       <textarea class="form-textarea" id="srLeaderQuestion" placeholder="최소 2가지 이상 작성해주세요." ></textarea>
     </div>
+
+    <div class="form-group">
+      <label class="form-label" style="font-weight:600;">그 외 하고 싶은 말씀 (자유기재)</label>
+      <textarea class="form-textarea" id="srFreeComment" placeholder="없으면 '없습니다'로 작성해주세요."></textarea>
+    </div>
   </div>`;
 
   // Submit
@@ -2155,6 +2160,9 @@ async function submitSelfReview(teamName, totalQ) {
   const leaderQuestion = document.getElementById('srLeaderQuestion').value.trim();
   if (!leaderQuestion) { showToast('리더에게 궁금한 점을 작성해주세요.'); return; }
 
+  // Free comment
+  const freeComment = document.getElementById('srFreeComment').value.trim() || '없습니다';
+
   // Submit
   const submitBtn = document.querySelector('.sr-submit-btn');
   submitBtn.classList.add('loading');
@@ -2173,6 +2181,7 @@ async function submitSelfReview(teamName, totalQ) {
       strengths: strengths,
       improvements: improvements,
       leaderQuestion: leaderQuestion,
+      freeComment: freeComment,
       timestamp: new Date().toISOString()
     });
 

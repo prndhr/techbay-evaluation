@@ -177,6 +177,40 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
   .btn.loading { pointer-events:none; opacity:.6; }
+
+  /* ── Self Review Form ── */
+  .self-review-page { max-width:720px; margin:0 auto; padding:40px 20px 80px; font-family:'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .self-review-page .sr-header { background:#fff; border-radius:12px; padding:32px; margin-bottom:24px; box-shadow:0 1px 4px rgba(0,0,0,.06); border-top:4px solid #4A9FE5; }
+  .self-review-page .sr-header h1 { font-size:24px; font-weight:700; margin-bottom:8px; }
+  .self-review-page .sr-header .sr-subtitle { font-size:14px; color:#555; line-height:1.6; }
+  .self-review-page .sr-instructions { background:#fff; border-radius:12px; padding:24px 32px; margin-bottom:24px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .self-review-page .sr-instructions h3 { font-size:14px; font-weight:700; color:#C62828; margin-bottom:12px; }
+  .self-review-page .sr-instructions ul { font-size:13px; color:#555; line-height:1.8; padding-left:20px; }
+  .self-review-page .sr-section { background:#fff; border-radius:12px; padding:28px 32px; margin-bottom:24px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .self-review-page .sr-section .form-section-title { font-size:15px; }
+  .self-review-page .sr-text-input { width:100%; padding:10px 14px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; }
+  .self-review-page .sr-text-input:focus { outline:none; border-color:#888; }
+  .self-review-page .sr-checkbox-group { display:flex; flex-wrap:wrap; gap:10px; }
+  .self-review-page .sr-checkbox-label { display:flex; align-items:center; gap:6px; padding:8px 16px; border:1px solid #ddd; border-radius:6px; font-size:13px; cursor:pointer; transition:all .15s; user-select:none; }
+  .self-review-page .sr-checkbox-label:hover { border-color:#888; }
+  .self-review-page .sr-checkbox-label.checked { background:#222; color:#fff; border-color:#222; }
+  .self-review-page .sr-checkbox-label input { display:none; }
+  .self-review-page .sr-submit-area { text-align:center; margin-top:32px; }
+  .self-review-page .sr-submit-btn { padding:14px 48px; font-size:15px; font-weight:600; background:#222; color:#fff; border:none; border-radius:8px; cursor:pointer; font-family:inherit; transition:background .15s; }
+  .self-review-page .sr-submit-btn:hover { background:#444; }
+  .self-review-page .sr-submit-btn.loading { pointer-events:none; opacity:.6; }
+  .self-review-thankyou { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; text-align:center; }
+  .self-review-thankyou h2 { font-size:22px; font-weight:700; margin-bottom:12px; }
+  .self-review-thankyou p { font-size:14px; color:#888; }
+
+  /* ── Link Share Modal ── */
+  .link-modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.45); z-index:1000; justify-content:center; align-items:center; }
+  .link-modal-overlay.show { display:flex; }
+  .link-modal { background:#fff; border-radius:12px; width:480px; max-width:90vw; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+  .link-modal h3 { font-size:16px; font-weight:700; margin-bottom:12px; }
+  .link-modal .link-box { display:flex; gap:8px; align-items:center; }
+  .link-modal .link-box input { flex:1; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:13px; font-family:inherit; background:#fafafa; }
+  .link-modal .link-box input:focus { outline:none; }
 </style>
 </head>
 <body>
@@ -228,6 +262,24 @@
 <div class="modal-overlay" id="uploadOverlay">
   <div class="upload-modal" id="uploadModal"></div>
 </div>
+
+<!-- Link Share Modal -->
+<div class="link-modal-overlay" id="linkModalOverlay" onclick="if(event.target===this){this.classList.remove('show')}">
+  <div class="link-modal">
+    <h3>팀원 셀프 리뷰 링크</h3>
+    <p style="font-size:13px; color:#888; margin-bottom:16px;">아래 링크를 팀원들에게 전달해주세요.</p>
+    <div class="link-box">
+      <input type="text" id="reviewLinkInput" readonly>
+      <button class="btn btn-primary btn-small" onclick="copyReviewLink()">복사하기</button>
+    </div>
+    <div style="text-align:right; margin-top:16px;">
+      <button class="btn btn-small" onclick="document.getElementById('linkModalOverlay').classList.remove('show')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Self Review Page (hidden by default) -->
+<div id="selfReviewPage" style="display:none;"></div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
@@ -788,7 +840,8 @@ function renderTeamView(name) {
 
   html += `</tbody></table>`;
 
-  html += `<div style="margin-top:20px; display:flex; justify-content:flex-end;">
+  html += `<div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+    <button class="btn btn-hr btn-small" onclick="showReviewLink('${name}')">팀원 리뷰지 전달하기</button>
     <button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')">제출 내역 조회 (HR)</button>
   </div>`;
 
@@ -1492,6 +1545,517 @@ function showToast(msg) {
 }
 
 // ══════════════════════════════════════════════
+// SELF-REVIEW FEATURE
+// ══════════════════════════════════════════════
+
+const SELF_REVIEW_QUESTIONS = {
+  "관제팀(BO)": {
+    questions: [
+      "나는 차량 부품 명칭에 대해 정확히 알고 있다.",
+      "나는 성능지에 대해 풍부한 지식을 갖추고 있다.",
+      "나는 관제 이슈를 적시에 팀에 신속히 전파한다.",
+      "나는 관제 이슈 상황을 충분히 이해하여 대응책을 준비할 수 있다.",
+      "나는 중복 작업 상황이 발생하지 않도록, 상품화 접수 진행 과정을 어드민에 정확히 표기한다."
+    ],
+    hints: [
+      "1점 : 부품 명칭에 대해 잘 모름 / 5점 : 부품 명칭을 헷갈려하는 일이 없으며, 전부 알고 있는 수준임",
+      "1점 : 타인에게 설명하기 어려운 수준이다 / 5점 : 타인에게 능숙히 설명할 수 있는 수준이다",
+      "1점 : 공유 빈도가 매우 낮다 / 5점 : 공유 빈도가 매우 높으며, 효율적이면서 직관적인 방식으로 전파할 수 있다",
+      "1점 : 상황에 대한 판단이 어려워, 리더의 지시를 필요로 한다 / 5점 : 주도적으로 상황을 판단하고 적절한 해결책을 찾을 수 있다",
+      "1점 : 실수가 잦다 / 5점 : 실수가 매우 적거나, 용인 가능한 수준이다"
+    ]
+  },
+  "관제팀(FD)": {
+    questions: [
+      "나는 차량 기본 옵션에 대한 이해도가 높다.",
+      "나는 팀 내 규정된 프로세스가 지켜지지 않은 상황 혹은 변수가 생겼을 때 팀에 공유한다.",
+      "나는 이동 작업 간의 거리를 효율적으로 고려하여, 작업을 배분 받는다.",
+      "나는 항상 교통 안전을 준수한다. (보행자 주의, 차간거리 확보, 제한속도 준수 등)"
+    ],
+    hints: [
+      "1점 : 옵션에 대해 거의 모른다 / 5점 : 풍부한 옵션 지식을 바탕으로, 차량 이동이 어려운 이슈가 발생했을 때에도 스스로 문제를 해결할 수 있다",
+      "1점 : 공유하지 않고 방치하는 편이다 / 5점 : 항상 공유하며, 필요 시 신속히 대응하여 팀 내 전파한다",
+      "1점 : 다음 이동 구역을 고려하지 않는다 / 5점 : 다음 이동 구역을 언제나 고려하며, 그 수준이 뛰어나다고 생각한다",
+      "1점 : 안전 수칙 미준수를 한 적이 있었다 / 5점 : 안전 수칙 미준수 건수가 없다 (0회)"
+    ]
+  },
+  "OQC팀": {
+    questions: [
+      "나는 풍부한 자동차 지식을 갖추고 있다.",
+      "나는 차량의 주요 옵션별 기능 작동 방식을 정확히 알고 있다.",
+      "나는 상품화 완료된 차량 검수 과정에서 추가 상품화 또는 재상품화가 발견됐을 때, 적절한 수준의 상품화를 결정할 수 있다.",
+      "나는 다음 공정(디테일링, 스튜디오, PDI)로 넘어갔을 때 추가/재상품화가 발생하지 않도록 누락 없이 검수한다."
+    ],
+    hints: [
+      "1점 : 직무 수행이 어려운 수준이거나, 리더의 도움을 필요로 한다 / 5점 : 엔진룸까지 진단 가능한 수준이며, 옵션 부품/명칭을 모두 인지한다",
+      "1점 : 거의 대부분의 옵션 기능 작동 방식을 모른다 / 5점 : 다양한 브랜드/트림별 차이를 모두 인지한다",
+      "1점 : 아예 불가능한 수준이다 / 5점 : 상품화 결정력이 매우 탁월한 수준이다",
+      "1점 : 누락이 많다 / 5점 : 누락이 전혀 없다"
+    ]
+  },
+  "디테일링팀": {
+    questions: [
+      "나는 디테일링 작업에 대한 검수가 가능하다.",
+      "나는 차량 컨디션과 연식 등의 상황을 고려하여, 적정 수준의 작업량을 결정할 수 있다.",
+      "나는 필요 이상으로 과도한 작업을 하지 않는다.",
+      "나는 디테일링 작업에 적합한 재료와 도구를 선정할 수 있는 수준의 이해력을 갖추고 있다.",
+      "나는 차량에 스크래치 나지 않도록, 안전하게 작업을 한다.",
+      "나는 디테일 일일 작업량을 맞추기 위해 (또는 뛰어넘을 정도로) 충실히 작업을 진행한다."
+    ],
+    hints: [
+      "1점 : QC역량과 차량 지식이 모두 부족하다 / 5점 : 디테일링 QC도 숙련되게 진행할 수 있고, 재상품화 여부까지 판단할 수 있다",
+      "1점 : 차량 상태에 대한 판단이 어려워, 작업량을 스스로 결정할 수 없다 / 5점 : 차량 상태에 대해 살핀 후, 주도적으로 작업량을 결정한다",
+      "1점 : 불필요한 작업을 하는 편이다 / 5점 : 효율적으로 작업 강약을 조절할 수 있다",
+      "1점 : 스스로 재료와 도구를 선정하기 어려워, 주변 사람의 도움을 필요로 한다 / 5점 : 타인에게 교육을 할 수 있는 수준이다",
+      "1점 : 차량에 흠집이 났던 적이 있었다 / 5점 : 차량의 상품화 상태를 유지하기 위한 안전을 항상 준수한다",
+      "1점 : 매우 그렇지 않다 / 5점 : 매우 일관되게 그렇다"
+    ]
+  },
+  "디테일링팀(QC)": {
+    questions: [
+      "나는 디테일링 작업에 대한 검수가 가능하다.",
+      "나는 차량 컨디션과 연식 등의 상황을 고려하여, 적정 수준의 작업량을 결정할 수 있다.",
+      "나는 필요 이상으로 과도한 작업을 하지 않는다.",
+      "나는 디테일링 작업에 적합한 재료와 도구를 선정할 수 있는 수준의 이해력을 갖추고 있다.",
+      "나는 차량에 스크래치 나지 않도록, 안전하게 작업을 한다.",
+      "나는 디테일 일일 작업량을 맞추기 위해 (또는 뛰어넘을 정도로) 충실히 작업을 진행한다."
+    ],
+    hints: [
+      "1점 : QC역량과 차량 지식이 모두 부족하다 / 5점 : 디테일링 QC도 숙련되게 진행할 수 있고, 재상품화 여부까지 판단할 수 있다",
+      "1점 : 차량 상태에 대한 판단이 어려워, 작업량을 스스로 결정할 수 없다 / 5점 : 차량 상태에 대해 살핀 후, 주도적으로 작업량을 결정한다",
+      "1점 : 불필요한 작업을 하는 편이다 / 5점 : 효율적으로 작업 강약을 조절할 수 있다",
+      "1점 : 스스로 재료와 도구를 선정하기 어려워, 주변 사람의 도움을 필요로 한다 / 5점 : 타인에게 교육을 할 수 있는 수준이다",
+      "1점 : 차량에 흠집이 났던 적이 있었다 / 5점 : 차량의 상품화 상태를 유지하기 위한 안전을 항상 준수한다",
+      "1점 : 매우 그렇지 않다 / 5점 : 매우 일관되게 그렇다"
+    ]
+  },
+  "스튜디오팀(운영)": {
+    questions: [
+      "나는 누락되는 컷이 없는지 매우 꼼꼼히 확인한다.",
+      "나는 차량 상태에 이슈가 있을 때 재촬영 여부를 신속히 판단할 수 있다.",
+      "나는 스튜디오 운영에 적합한 커뮤니케이션 역량을 가지고 있다."
+    ],
+    hints: [
+      "1점 : 누락을 잘 못 막는다 / 5점 : 누락이 거의 없거나, 재촬영 필요 건을 자주 찾아낸다",
+      "1점 : 차량 또는 도메인 지식이 아직 부족하다 (리더의 도움을 필요로 한다) / 5점 : 리더가 없더라도 스스로 운영 판단을 할 수 있다",
+      "1점 : 불편할 수 있는 커뮤니케이션을 불편하게 전달한다 / 5점 : 친절하면서 명확한 소통이 가능하다"
+    ]
+  },
+  "스튜디오팀(촬영)": {
+    questions: [
+      "나는 일관된 자세와 구도를 유지하여 다음 컷을 빠르게 촬영한다.",
+      "나는 규정된 촬영 기준점(높이, 각도, 카메라 세팅값 등)을 인지하고 있다.",
+      "나는 개별 디테일컷 톤을 항상 동일하게 맞춘다.",
+      "나는 누락되는 컷 없이 지정된 촬영 사진 장수를 정확히 맞춘다.",
+      "나는 고지사항을 놓치지 않고 모두 촬영한다."
+    ],
+    hints: [
+      "1점 : 태도가 자주 어그러지거나, 속도가 개선이 되지 않는다 / 5점 : 촬영 속도가 탁월하게 빠르다",
+      "1점 : 기준점을 잘 모른다 / 5점 : 기준점에 대해 타인에게 교육할 수 있는 수준이다",
+      "1점 : 자주 불일치가 발생한다 / 5점 : 불일치가 거의 없다",
+      "1점 : 누락이 잦다 / 5점 : 누락이 거의 없다",
+      "1점 : 고지사항을 자주 놓친다 / 5점 : 고지사항 누락이 거의 없다"
+    ]
+  },
+  "출고팀": {
+    questions: [
+      "나는 미비한 검수 사항을 빠르고 정확하게 발견한다.",
+      "나는 최상의 상품화 차량 상태를 위해, 외관/실내 세정 작업을 충실히 진행한다.",
+      "나는 유관 부서에서 요청한 차량 관련 문의사항을 정확히 파악하고, 신속히 답변한다.",
+      "나는 검수 시간을 빈틈 없이 메우려고 하며, 정해진 대수가 끝나더라도 다른 작업(할거리)를 찾는다."
+    ],
+    hints: [
+      "1점 : 검수 누락이 잦거나 발견이 어렵다 / 5점 : 검수 누락이 거의 없다",
+      "1점 : 충실하지 않다 / 5점 : 매우 충실하며, 완료된 상태가 Wow한 수준이다",
+      "1점 : 슬랙 커뮤니케이션이 아직 어렵다 / 5점 : 슬랙 커뮤니케이션이 매우 원활한 수준이다",
+      "1점 : 검수 시간을 느슨하게 보낸다 / 5점 : 항상 일관되게 그렇다"
+    ]
+  },
+  "인프라팀": {
+    questions: [
+      "나는 다양한 외/내부 이해관계자와 명확하면서도 부드럽게 소통할 수 있다.",
+      "나는 협의 과정을 영리하게 이끌어, 보다 유리하거나 높은 조건을 교섭할 수 있다.",
+      "나는 프로젝트 타임라인을 비즈니스 속도에 항상 맞춘다.",
+      "나는 유관 이슈를 신속하게 대응하고 해결할 수 있다.",
+      "나는 우선순위에 맞게 다수 프로젝트를 꼼꼼히 관리할 수 있다."
+    ],
+    hints: [
+      "1점 : 독립적으로 소통하기 어려운 수준 / 5점 : 리더가 믿고 맡길 수 있는 수준",
+      "1점 : 커뮤니케이션 스킬이 개선 필요한 수준이다 / 5점 : 탁월한 협상력을 갖추었다",
+      "1점 : 거의 대부분 기한을 준수하지 못한다 / 5점 : 항상 기한을 준수한다",
+      "1점 : 유관 이슈에 대한 해석 능력이 부족하다 / 5점 : 독립적으로 해결할 수 있는 수준이다",
+      "1점 : 우선순위를 인지하기 어렵다 / 5점 : 독립적으로 실수 없이 해결할 수 있다"
+    ]
+  },
+  "UDTT정비팀": {
+    questions: [
+      "나는 다양한 정비 난이도의 차량을 모두 수행할 수 있다.",
+      "나는 많은 정비 대수를 신속하게 처리하여, 리프트 회전율을 높인다.",
+      "작업 요청 항목이 5개 이상인 경우, 정비 동선을 효율적으로 설계하여 불필요한 작업을 최소화한다.",
+      "slack과 공업사 어드민 등 사용이 능숙하여 정비 속도를 더 높일 수 있다.",
+      "정확한 정비 작업으로 불량률이 매우 낮다."
+    ],
+    hints: [
+      "1점 : 3대 중 1대는 누군가의 도움이 필요하다 / 5점 : 100% 가능한 수준이다",
+      "1점 : 아직 개선이 많이 필요하다 / 5점 : 매우 높은 편이다",
+      "1점 : 개선이 필요하다 / 5점 : 타인에게 조언할 수 있는 수준이다",
+      "1점 : 아직 슬랙, 앱 사용이 어렵다 / 5점 : 타인에게 조언할 수 있는 수준이다",
+      null
+    ]
+  },
+  "진단팀(리프트)": {
+    questions: [
+      "나는 풍부한 자동차 지식(옵션/부품)을 갖추고 있다.",
+      "차량의 현재 상태와 판매 가격대를 고려하여 적정 수준의 상품화를 고려한다.",
+      "나는 언제나 안전 수칙을 준수한다.",
+      "나는 재상품화 요청이 발생하지 않도록, 어드민에서 상품화 분류 기준에 맞게 정확히 입력한다.",
+      "나는 차량 또는 리프트 이동에 소요되는 시간에도 추가 진단을 통해 작업 효율을 높인다."
+    ],
+    hints: [
+      "1점 : 직무 수행이 어려운 수준이다 / 5점 : 엔진룸까지 진단 가능한 수준이다",
+      "1점 : 아예 불가능한 수준이다 / 5점 : 상품화 결정이 탁월한 수준이다",
+      "1점 : 거의 대부분 기한을 준수하지 못한다 / 5점 : 항상 기한을 준수한다",
+      "1점 : 실수가 자주 있었다 / 5점 : 실수가 거의 없었다",
+      "1점 : 아직 작업 효율을 고려하지 못한다 / 5점 : 진단/검수 시간을 빈틈 없이 채우는 수준이다"
+    ]
+  },
+  "진단팀(옵션)": {
+    questions: [
+      "나는 차량 주요 옵션별 기능 작동 방식을 정확히 이해하고 있다.",
+      "나는 동일 차종 간에도 옵션 차이를 명확히 인지하고 있다.",
+      "나는 옵션 기능 이상 여부를 빠르고 효율적으로 진단한다."
+    ],
+    hints: [
+      "1점 : 실무 진행이 어려운 수준이다 / 5점 : 다양한 브랜드 옵션 차이를 100% 가까이 인지한다",
+      "1점 : 실무 진행이 어려운 수준이다 / 5점 : 트림별 옵션 차이를 100% 이해하고 있다",
+      "1점 : 실무 진행이 어려운 수준이다 / 5점 : 속도가 일관되게 매우 빠르다"
+    ]
+  },
+  "리볼트팀": {
+    questions: [
+      "나는 최상의 출고 상태가 되도록 외관/실내 세정 작업을 충실히 이행한다.",
+      "나는 입고된 차량의 하자를 꼼꼼히 체크한다.",
+      "나는 기존 진행 중인 작업이 있더라도, 긴급 입/출고 건을 신속히 확인한다.",
+      "나는 유관 부서에서 요청한 차량 관련 문의사항을 정확히 파악하고, 신속히 답변한다.",
+      "나는 전시장의 업무 순위와 차량의 상태에 따라, 출고 작업의 적정 수준을 판단한다."
+    ],
+    hints: [
+      "1점 : 태만한 수준이다 / 5점 : 매우 충실하며, 완료된 상태가 Wow한 수준이다",
+      "1점 : 자주 놓친다 / 5점 : 하자 발견은 물론, 적절한 해결책까지 제시하여 조치한 적이 있다",
+      "1점 : 그렇지 않다 / 5점 : 매우 그런 편이다",
+      "1점 : 슬랙을 놓치는 경우가 많다 / 5점 : 거의 실시간으로 슬랙을 확인하며, 작업 중에도 우선순위 조정하여 요청 사항을 해결한다",
+      "1점 : 판단하지 않는다 (또는 어렵다) / 5점 : 작업의 적정 수준을 매 순간 판단하며, 때에 따라 작업의 강약을 조절한다"
+    ]
+  }
+};
+
+// Self-review attendance questions
+function getSelfReviewAttendance(teamName) {
+  const isRevolt = teamName === '리볼트팀';
+  const questions = [
+    { q: "나는 지각을 하지 않는다.", hint: isRevolt ? "4점 : 그런 적이 단 한 번도 없었다 / 5점 : 그런 적이 단 한 번도 없고, 오히려 항상 10~20분 전에 도착하여 업무를 준비한다." : "5점 : 그런 적이 단 한 번도 없었다" },
+    { q: "나는 무단 결근을 하지 않는다.", hint: "5점 : 그런 적이 단 한 번도 없었다" },
+    { q: "나는 주어진 작업에 충실하며, 여유가 있더라도 팀에 도움이 될 일거리를 찾아낸다.", hint: isRevolt ? "4점 : 항상 일관되게 그렇다 / 5점 : 항상 일관되게 그렇고, 일이 여유있을 때라도 앉아서 휴대폰을 한다거나 기타 웹사이트를 본 적이 없다." : "5점 : 항상 일관되게 그렇다" }
+  ];
+  if (isRevolt) {
+    questions.push({ q: "집중하여 끝낼 수 있는 일을 느슨히 하지 않는다.(정해진 근무 시간 내 최대한 업무를 완수한다.)", hint: "5점 : 항상 일관되게 그렇다" });
+  }
+  return questions;
+}
+
+// Self-review common competency questions
+function getSelfReviewCommon(teamName) {
+  const isRevolt = teamName === '리볼트팀';
+  const questions = [
+    { q: "나는 언제나 리더의 지시사항을 준수한다.", hint: isRevolt ? "4점 : 리더의 교정적 피드백도 적극적으로 수용할 수 있다 / 5점: 리더가 내린 주의사항을, 전달 받은 이후에 한 번도 어긴 적 없다." : "5점 : 리더의 교정적 피드백도 적극적으로 수용할 수 있다" },
+    { q: "나는 상대방이 한 번에 이해할 수 있도록 배경과 맥락을 충분히 잘 설명한다.", hint: "5점 : 친절하고 명확하고 간결한 커뮤니케이션을 갖추고 있다" },
+    { q: "나는 근면한 태도로 팀에 적극적으로 헌신한다.", hint: "5점 : 항상 일관되게 그렇다" }
+  ];
+  if (isRevolt) {
+    questions.push({ q: "업무가 과중해지거나, 프로세스가 갑자기 바뀐다하더라도 최대한 긍정적으로 받아들인다.", hint: "4점 : 스스로 한 번도 불평하며 받아드린 적 없다 / 5점 : 오히려 팀원들을 독려하며 긍정적으로 적응하려고 노력했다" });
+  }
+  return questions;
+}
+
+function showReviewLink(teamName) {
+  const base = window.location.href.split('?')[0];
+  const url = base + '?review=' + encodeURIComponent(teamName);
+  document.getElementById('reviewLinkInput').value = url;
+  document.getElementById('linkModalOverlay').classList.add('show');
+}
+
+function copyReviewLink() {
+  const input = document.getElementById('reviewLinkInput');
+  input.select();
+  navigator.clipboard.writeText(input.value).then(() => {
+    showToast('링크가 복사되었습니다.');
+  }).catch(() => {
+    document.execCommand('copy');
+    showToast('링크가 복사되었습니다.');
+  });
+}
+
+function renderSelfReviewForm(teamName) {
+  // Hide admin UI
+  document.querySelector('.header').style.display = 'none';
+  document.querySelector('.container').style.display = 'none';
+  document.getElementById('selfReviewPage').style.display = 'block';
+
+  const jobData = SELF_REVIEW_QUESTIONS[teamName];
+  if (!jobData) {
+    document.getElementById('selfReviewPage').innerHTML = `<div class="self-review-page">
+      <div class="sr-header"><h1>B2C 팀원 셀프 리뷰</h1>
+      <p class="sr-subtitle" style="color:#C62828;">존재하지 않는 팀입니다: ${teamName}</p></div></div>`;
+    return;
+  }
+
+  const attendance = getSelfReviewAttendance(teamName);
+  const common = getSelfReviewCommon(teamName);
+
+  let qIdx = 0; // global question index for score buttons
+
+  let html = `<div class="self-review-page">`;
+
+  // Header
+  html += `<div class="sr-header">
+    <h1>B2C 팀원 셀프 리뷰</h1>
+    <p class="sr-subtitle">${teamName} 팀원으로서 자신의 업무 성과와 태도를 점검해보는 시간입니다.</p>
+  </div>`;
+
+  // Instructions
+  html += `<div class="sr-instructions">
+    <h3>작성 전 꼭 읽어주세요</h3>
+    <ul>
+      <li>본 설문은 자신의 업무 수행을 스스로 돌아보는 <strong>셀프 리뷰</strong>입니다.</li>
+      <li>각 항목을 <strong>1점(매우 부족)~5점(매우 우수)</strong>으로 솔직하게 평가해주세요.</li>
+      <li>PC 환경에서 작성하시는 것을 권장합니다.</li>
+      <li>제출 후에는 수정이 불가하니, 신중히 작성해주세요.</li>
+    </ul>
+  </div>`;
+
+  // Section 1: 기본 인적사항
+  html += `<div class="sr-section">
+    <div class="form-section-title">1. 기본 인적사항</div>
+    <div class="form-group">
+      <label class="form-label">영어 닉네임 <span style="color:#C62828;">*</span></label>
+      <input type="text" class="sr-text-input" id="srNickname" placeholder="예: hannah" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">소속 팀 <span style="color:#C62828;">*</span></label>
+      <input type="text" class="sr-text-input" id="srTeamInput" placeholder="예: ${teamName}" value="${teamName}" required>
+    </div>
+  </div>`;
+
+  // Section 2: 근태 평가
+  html += `<div class="sr-section">
+    <div class="form-section-title">2. 근태 평가</div>`;
+  attendance.forEach(item => {
+    html += renderSelfReviewScoreQ(qIdx, item.q, item.hint);
+    qIdx++;
+  });
+  html += `</div>`;
+
+  // Section 3: 공통 역량 평가
+  html += `<div class="sr-section">
+    <div class="form-section-title">3. 공통 역량 평가</div>`;
+  common.forEach(item => {
+    html += renderSelfReviewScoreQ(qIdx, item.q, item.hint);
+    qIdx++;
+  });
+  html += `</div>`;
+
+  // Section 4: 직무 역량 평가
+  html += `<div class="sr-section">
+    <div class="form-section-title">4. 직무 역량 평가</div>`;
+  jobData.questions.forEach((q, i) => {
+    html += renderSelfReviewScoreQ(qIdx, q, jobData.hints[i]);
+    qIdx++;
+  });
+  html += `</div>`;
+
+  // Section 5: 종합 평가
+  const strengthOptions = ['커뮤니케이션', '팔로워쉽', '근태 관리', '작업 속도', '작업 퀄리티', '작업량'];
+
+  html += `<div class="sr-section">
+    <div class="form-section-title">5. 종합 평가</div>
+
+    <div class="form-group">
+      <label class="form-label" style="font-size:14px; font-weight:700;">최종 점수를 선택해주세요. <span style="color:#C62828;">*</span></label>
+      <div style="font-size:13px; color:#555; line-height:1.7; margin-bottom:16px;">
+        아래 등급표를 참고하여, 자신에게 해당하는 점수를 선택해주세요.
+      </div>
+
+      <table class="grade-criteria" style="margin-bottom:20px;">
+        <thead><tr>
+          <th style="background:#fafafa; color:#333; width:100px;"></th>
+          <th>S</th><th>A</th><th>B</th><th>C</th><th>D</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>PRND way</td><td class="gc-s">귀감이 됨</td><td>충실히 지킴</td><td>대부분 지킴</td><td>종종 안 지킴</td><td>거의 안 지킴</td></tr>
+          <tr><td>영향력</td><td class="gc-s">감동을 선사</td><td>긍정적 영향</td><td>개인에서<br>그치는 수준</td><td>영향력 없음</td><td>주변 동료가<br>힘들어함</td></tr>
+          <tr><td>결과물</td><td class="gc-s"><i>Wow</i></td><td><i>Great</i></td><td><i>Good</i></td><td><i>Soso</i></td><td><i>Bad</i></td></tr>
+          <tr><td>미래 기대치</td><td class="gc-s">리더로 도약</td><td>뛰어난 실무자</td><td>좋은 동료</td><td>특별한 기대 없음</td><td>이별 고려</td></tr>
+        </tbody>
+      </table>
+
+      <div class="score-group" id="srFinalScoreGroup">`;
+  for (let s = 1; s <= 5; s++) {
+    html += `<button type="button" class="score-btn" data-score="${s}" onclick="selectSrFinalScore(this)">${s}</button>`;
+  }
+  html += `</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="font-weight:600;">나의 강점 (복수 선택 가능) <span style="color:#C62828;">*</span></label>
+      <div class="sr-checkbox-group" id="srStrengths">`;
+  strengthOptions.forEach(opt => {
+    html += `<label class="sr-checkbox-label" onclick="this.classList.toggle('checked')"><input type="checkbox" value="${opt}">${opt}</label>`;
+  });
+  html += `</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="font-weight:600;">나의 개선점 (복수 선택 가능) <span style="color:#C62828;">*</span></label>
+      <div class="sr-checkbox-group" id="srImprovements">`;
+  strengthOptions.forEach(opt => {
+    html += `<label class="sr-checkbox-label" onclick="this.classList.toggle('checked')"><input type="checkbox" value="${opt}">${opt}</label>`;
+  });
+  html += `</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="font-weight:600;">리더에게 궁금한 점 <span style="color:#C62828;">*</span></label>
+      <div style="font-size:12px; color:#888; margin-bottom:8px;">리더에게 궁금한 점을 2가지 이상 작성해주세요.</div>
+      <textarea class="form-textarea" id="srLeaderQuestion" placeholder="리더에게 궁금한 점을 작성해주세요..."></textarea>
+    </div>
+  </div>`;
+
+  // Submit
+  html += `<div class="sr-submit-area">
+    <button class="sr-submit-btn" onclick="submitSelfReview('${teamName}', ${qIdx})">제출하기</button>
+  </div>`;
+
+  html += `</div>`; // close self-review-page
+
+  document.getElementById('selfReviewPage').innerHTML = html;
+}
+
+function renderSelfReviewScoreQ(idx, q, hint) {
+  let html = `<div class="form-group">
+    <label class="form-label"><span class="q-num">${idx + 1}</span>${q}</label>`;
+  if (hint) {
+    html += `<div style="font-size:12px; color:#888; margin-bottom:8px; margin-left:28px;">${hint}</div>`;
+  }
+  html += `<div class="score-group">`;
+  for (let s = 1; s <= 5; s++) {
+    html += `<button type="button" class="score-btn" data-q="sr${idx}" data-score="${s}" onclick="selectScore(this)">${s}</button>`;
+  }
+  html += `</div></div>`;
+  return html;
+}
+
+function selectSrFinalScore(btn) {
+  document.querySelectorAll('#srFinalScoreGroup .score-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+async function submitSelfReview(teamName, totalQ) {
+  const nickname = document.getElementById('srNickname').value.trim();
+  if (!nickname) { showToast('영어 닉네임을 입력해주세요.'); return; }
+
+  const teamInput = document.getElementById('srTeamInput').value.trim();
+  if (!teamInput) { showToast('소속 팀을 입력해주세요.'); return; }
+
+  // Collect all scores
+  const attendance = getSelfReviewAttendance(teamName);
+  const common = getSelfReviewCommon(teamName);
+  const jobData = SELF_REVIEW_QUESTIONS[teamName];
+
+  const attendanceScores = [];
+  const commonScores = [];
+  const jobScores = [];
+
+  let qIdx = 0;
+
+  // Attendance
+  for (let i = 0; i < attendance.length; i++) {
+    const sel = document.querySelector(`.score-btn[data-q="sr${qIdx}"].selected`);
+    if (!sel) { showToast(`${qIdx + 1}번 항목의 점수를 선택해주세요.`); return; }
+    attendanceScores.push(parseInt(sel.dataset.score));
+    qIdx++;
+  }
+
+  // Common
+  for (let i = 0; i < common.length; i++) {
+    const sel = document.querySelector(`.score-btn[data-q="sr${qIdx}"].selected`);
+    if (!sel) { showToast(`${qIdx + 1}번 항목의 점수를 선택해주세요.`); return; }
+    commonScores.push(parseInt(sel.dataset.score));
+    qIdx++;
+  }
+
+  // Job
+  for (let i = 0; i < jobData.questions.length; i++) {
+    const sel = document.querySelector(`.score-btn[data-q="sr${qIdx}"].selected`);
+    if (!sel) { showToast(`${qIdx + 1}번 항목의 점수를 선택해주세요.`); return; }
+    jobScores.push(parseInt(sel.dataset.score));
+    qIdx++;
+  }
+
+  // Final score
+  const finalScoreBtn = document.querySelector('#srFinalScoreGroup .score-btn.selected');
+  if (!finalScoreBtn) { showToast('최종 점수를 선택해주세요.'); return; }
+  const finalScore = parseInt(finalScoreBtn.dataset.score);
+
+  // Strengths
+  const strengths = [];
+  document.querySelectorAll('#srStrengths .sr-checkbox-label.checked input').forEach(inp => strengths.push(inp.value));
+  if (strengths.length === 0) { showToast('강점을 1개 이상 선택해주세요.'); return; }
+
+  // Improvements
+  const improvements = [];
+  document.querySelectorAll('#srImprovements .sr-checkbox-label.checked input').forEach(inp => improvements.push(inp.value));
+  if (improvements.length === 0) { showToast('개선점을 1개 이상 선택해주세요.'); return; }
+
+  // Leader question
+  const leaderQuestion = document.getElementById('srLeaderQuestion').value.trim();
+  if (!leaderQuestion) { showToast('리더에게 궁금한 점을 작성해주세요.'); return; }
+
+  // Submit
+  const submitBtn = document.querySelector('.sr-submit-btn');
+  submitBtn.classList.add('loading');
+  submitBtn.textContent = '제출 중...';
+
+  try {
+    await apiPost({
+      action: 'submitSelfReview',
+      team: teamName,
+      nickname: nickname,
+      teamInput: teamInput,
+      attendanceScores: attendanceScores,
+      commonScores: commonScores,
+      jobScores: jobScores,
+      finalScore: finalScore,
+      strengths: strengths,
+      improvements: improvements,
+      leaderQuestion: leaderQuestion,
+      timestamp: new Date().toISOString()
+    });
+
+    document.getElementById('selfReviewPage').innerHTML = `<div class="self-review-page">
+      <div class="self-review-thankyou">
+        <div style="font-size:48px; margin-bottom:20px;">&#10003;</div>
+        <h2>제출이 완료되었습니다.</h2>
+        <p>감사합니다.</p>
+      </div>
+    </div>`;
+  } catch (err) {
+    submitBtn.classList.remove('loading');
+    submitBtn.textContent = '제출하기';
+    showToast('제출에 실패했습니다. 다시 시도해주세요.');
+  }
+}
+
+// ══════════════════════════════════════════════
 // PERIOD SELECTOR
 // ══════════════════════════════════════════════
 
@@ -1543,6 +2107,14 @@ document.addEventListener('click', function(e) {
 // ══════════════════════════════════════════════
 
 (async function init() {
+  // Check for self-review mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const reviewTeam = urlParams.get('review');
+  if (reviewTeam) {
+    renderSelfReviewForm(decodeURIComponent(reviewTeam));
+    return;
+  }
+
   renderPeriodLabel();
   await loadPeriodData();
   renderNav();

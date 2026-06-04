@@ -715,7 +715,7 @@ async function loadPeriodData() {
     if (hasServerData) {
       Object.keys(employees).forEach(team => {
         if (TEAMS[team]) {
-          TEAMS[team].employees = employees[team];
+          const serverList = employees[team] || []; const defaultList = DEFAULT_EMPLOYEES[team] || []; TEAMS[team].employees = [...new Set([...serverList, ...defaultList])];
         }
       });
     } else {

@@ -715,7 +715,7 @@ async function loadPeriodData() {
     if (hasServerData) {
       Object.keys(employees).forEach(team => {
         if (TEAMS[team]) {
-          const serverList = employees[team] || []; const defaultList = DEFAULT_EMPLOYEES[team] || []; TEAMS[team].employees = [...new Set([...serverList, ...defaultList])];
+          TEAMS[team].employees = employees[team];
         }
       });
     } else {
@@ -2515,6 +2515,14 @@ document.addEventListener('click', function(e) {
     const reviewTeam = urlParams.get('review') ? decodeURIComponent(urlParams.get('review')) : decodeTeam(reviewCode);
     if (!reviewTeam || !TEAMS[reviewTeam]) { document.body.innerHTML = '<div style="text-align:center;padding:80px;font-size:16px;color:#888;">유효하지 않은 링크입니다.</div>'; return; }
     renderSelfReviewForm(reviewTeam);
+    return;
+  }
+
+  // 관리자 비밀번호 확인
+  const ADMIN_PASSWORD = 'flejdyddlstk1234!';
+  const pw = prompt('비밀번호를 입력해주세요.');
+  if (pw !== ADMIN_PASSWORD) {
+    document.body.innerHTML = '<div style="text-align:center;padding:80px;font-size:16px;color:#888;">비밀번호가 일치하지 않습니다.</div>';
     return;
   }
 

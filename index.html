@@ -248,8 +248,8 @@
 <div class="modal-overlay" id="pwOverlay">
   <div class="pw-modal">
     <h3>비밀번호 입력</h3>
-    <p>제출 내역 조회는 HR 담당자만 접근할 수 있습니다.</p>
-    <input type="password" class="pw-input" id="pwInput" placeholder="비밀번호를 입력해주세요" onkeydown="if(event.key==='Enter')checkPassword()">
+    <p id="pwModalDesc">팀 별 개별 안내 받은 숫자 4자리를 입력해주세요.</p>
+    <input type="password" class="pw-input" id="pwInput" placeholder="비밀번호" onkeydown="if(event.key==='Enter')checkPassword()">
     <div class="pw-error" id="pwError">비밀번호가 일치하지 않습니다.</div>
     <div class="form-actions" style="justify-content:center; border:none; padding-top:16px;">
       <button class="btn" onclick="closePwModal()">취소</button>
@@ -2573,8 +2573,8 @@ document.addEventListener('click', function(e) {
   const pwOverlay = document.createElement('div');
   pwOverlay.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
     <div style="text-align:center;">
-      <h2 style="margin-bottom:8px;font-size:18px;color:#333;">B2C 팀원 인사 평가</h2>
-      <p style="color:#888;font-size:13px;margin-bottom:24px;">비밀번호를 입력해주세요.</p>
+      <h2 style="margin-bottom:8px;font-size:18px;color:#333;">인사평가보드로 접속합니다.</h2>
+      <p style="color:#888;font-size:13px;margin-bottom:24px;">안내 받은 특수 문자 포함 비밀번호를 입력하세요.</p>
       <input type="password" id="adminPwInput" lang="en" autocomplete="off" spellcheck="false"
         style="width:260px;padding:12px 16px;border:1px solid #ddd;border-radius:8px;font-size:15px;text-align:center;outline:none;"
         placeholder="비밀번호">

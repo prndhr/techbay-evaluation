@@ -309,6 +309,7 @@ const PERIODS = [
 ];
 
 let currentPeriod = PERIODS[PERIODS.length - 1]; // 최신 시점으로 시작
+const authenticatedTeams = new Set(); // 세션 내 인증된 팀
 
 const COMMON_QUESTIONS = [
   "당일 연차나 무단 결근을 한 적이 없는가?",
@@ -891,7 +892,7 @@ function renderTeamView(name) {
       </td>
       <td>
         <button class="btn ${done ? 'btn-edit' : 'btn-disabled'}"
-          ${done ? `onclick="openForm('${name}','${emp}',true)"` : 'disabled'}>
+          ${done ? `onclick="requestEditAccess('${name}','${emp}')"` : 'disabled'}>
           수정하기
         </button>
       </td>
@@ -1254,6 +1255,26 @@ document.getElementById('modalOverlay').addEventListener('click', function(e) {
 
 let pendingHistoryTeam = null;
 
+// 수정하기 버튼 클릭 시 팀 비밀번호 확인
+let pendingEditTeam = null;
+let pendingEditEmp = null;
+
+function requestEditAccess(teamName, empName) {
+  // 이미 인증된 팀이면 바로 열기
+  if (authenticatedTeams.has(teamName)) {
+    openForm(teamName, empName, true);
+    return;
+  }
+  // 비밀번호 입력 요청
+  pendingEditTeam = teamName;
+  pendingEditEmp = empName;
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwError').style.display = 'none';
+  document.getElementById('pwOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('pwInput').focus(), 100);
+}
+
 function promptTeamHistoryPassword(teamName) {
   pendingHistoryTeam = teamName;
   document.getElementById('pwInput').value = '';
@@ -1274,6 +1295,24 @@ function promptHistoryPassword() {
 
 function checkPassword() {
   const pw = document.getElementById('pwInput').value;
+
+  // 수정하기 비밀번호 확인
+  if (pendingEditTeam) {
+    const teamPw = TEAM_PASSWORDS[pendingEditTeam];
+    if (pw === teamPw || pw === HR_PASSWORD) {
+      authenticatedTeams.add(pendingEditTeam);
+      closePwModal();
+      openForm(pendingEditTeam, pendingEditEmp, true);
+      pendingEditTeam = null;
+      pendingEditEmp = null;
+    } else {
+      document.getElementById('pwError').style.display = 'block';
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwInput').focus();
+    }
+    return;
+  }
+
   if (pendingHistoryTeam) {
     // 팀별 비밀번호 또는 HR 비밀번호 모두 허용
     const teamPw = TEAM_PASSWORDS[pendingHistoryTeam];

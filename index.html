@@ -2525,11 +2525,44 @@ document.addEventListener('click', function(e) {
 
   // 관리자 비밀번호 확인
   const ADMIN_PASSWORD = 'flejdyddlstk1234!';
-  const pw = prompt('비밀번호를 입력해주세요.');
+
+  // 메인 UI 숨기기
+  document.querySelector('.header').style.display = 'none';
+  document.querySelector('.container').style.display = 'none';
+
+  // 비밀번호 입력 화면
+  const pwOverlay = document.createElement('div');
+  pwOverlay.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
+    <div style="text-align:center;">
+      <h2 style="margin-bottom:8px;font-size:18px;color:#333;">B2C 팀원 인사 평가</h2>
+      <p style="color:#888;font-size:13px;margin-bottom:24px;">비밀번호를 입력해주세요.</p>
+      <input type="password" id="adminPwInput" lang="en" autocomplete="off" spellcheck="false"
+        style="width:260px;padding:12px 16px;border:1px solid #ddd;border-radius:8px;font-size:15px;text-align:center;outline:none;"
+        placeholder="비밀번호">
+      <div id="adminPwError" style="color:#C62828;font-size:13px;margin-top:12px;display:none;">비밀번호가 일치하지 않습니다.</div>
+    </div>
+  </div>`;
+  document.body.appendChild(pwOverlay);
+
+  const pwInput = document.getElementById('adminPwInput');
+  pwInput.focus();
+
+  const pw = await new Promise(resolve => {
+    pwInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        resolve(pwInput.value);
+      }
+    });
+  });
+
   if (pw !== ADMIN_PASSWORD) {
-    document.body.innerHTML = '<div style="text-align:center;padding:80px;font-size:16px;color:#888;">비밀번호가 일치하지 않습니다.</div>';
+    document.getElementById('adminPwError').style.display = 'block';
     return;
   }
+
+  pwOverlay.remove();
+  document.querySelector('.header').style.display = '';
+  document.querySelector('.container').style.display = '';
 
   renderPeriodLabel();
   await loadPeriodData();

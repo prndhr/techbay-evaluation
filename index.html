@@ -2604,8 +2604,17 @@ document.addEventListener('click', function(e) {
   document.querySelector('.container').style.display = '';
 
   renderPeriodLabel();
+
+  // 기본 명단으로 네비 먼저 표시
+  Object.keys(TEAMS).forEach(key => {
+    TEAMS[key].employees = DEFAULT_EMPLOYEES[key] || ["홍길동"];
+  });
+  renderNav();
+
+  // API 데이터 로드 후 업데이트
   await loadPeriodData();
   renderNav();
+  if (currentTeam) selectTeam(currentTeam);
 })();
 </script>
 </body>

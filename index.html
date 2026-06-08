@@ -2569,6 +2569,9 @@ document.addEventListener('click', function(e) {
   document.querySelector('.header').style.display = 'none';
   document.querySelector('.container').style.display = 'none';
 
+  // API 데이터를 비밀번호 입력과 동시에 미리 로드
+  const dataPromise = loadPeriodData();
+
   // 비밀번호 입력 화면
   const pwOverlay = document.createElement('div');
   pwOverlay.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
@@ -2611,8 +2614,8 @@ document.addEventListener('click', function(e) {
   });
   renderNav();
 
-  // API 데이터 로드 후 업데이트
-  await loadPeriodData();
+  // 미리 로드한 API 데이터 완료 대기 후 업데이트
+  await dataPromise;
   renderNav();
   if (currentTeam) selectTeam(currentTeam);
 })();

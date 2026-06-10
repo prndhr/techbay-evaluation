@@ -669,7 +669,9 @@ async function apiPost(data) {
     body: JSON.stringify(data),
     redirect: 'follow'
   });
-  return res.json();
+  const result = await res.json();
+  if (result.error) throw new Error(result.error);
+  return result;
 }
 
 // ─── 로딩 표시 ───

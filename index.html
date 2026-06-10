@@ -281,6 +281,12 @@
 <!-- Self Review Page (hidden by default) -->
 <div id="selfReviewPage" style="display:none;"></div>
 
+<!-- Self Review View Modal -->
+<div class="modal-overlay" id="selfReviewViewOverlay" onclick="if(event.target===this)closeSelfReviewModal()">
+  <div class="modal" id="selfReviewViewContent" style="max-width:640px;max-height:85vh;overflow-y:auto;position:relative;padding:32px;">
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -655,8 +661,8 @@ let isLoading = false;
 
 // ─── API 호출 유틸 ───
 
-async function apiGet(action, period) {
-  const url = `${API_URL}?action=${action}&period=${period || currentPeriod.id}`;
+async function apiGet(action, extra) {
+  const url = `${API_URL}?action=${action}&period=${currentPeriod.id}${extra || ''}`;
   const res = await fetch(url, { redirect: 'follow' });
   return res.json();
 }
@@ -905,6 +911,7 @@ function renderTeamView(name) {
       </td>
       <td>
         <span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:${selfReviewStatus[name + '::' + nickname] ? '#424242' : '#e0e0e0'};text-align:center;line-height:18px;color:#fff;font-size:13px;font-weight:bold;">${selfReviewStatus[name + '::' + nickname] ? '✓' : ''}</span>
+        ${selfReviewStatus[name + '::' + nickname] ? `<button class="btn btn-small" style="margin-left:6px;font-size:11px;padding:2px 8px;color:#1565C0;border-color:#ccc;" onclick="viewSelfReview('${name}','${nickname}')">보기</button>` : ''}
       </td>
       <td>
         <input type="checkbox" ${interviewed ? 'checked' : ''} onchange="toggleInterview('${name}','${emp}',this.checked)" style="width:16px; height:16px; cursor:pointer;">
@@ -1256,6 +1263,100 @@ document.getElementById('modalOverlay').addEventListener('click', function(e) {
 // ══════════════════════════════════════════════
 
 let pendingHistoryTeam = null;
+
+// ─── 셀프 리뷰 보기 모달 ───
+
+async function viewSelfReview(teamName, nickname) {
+  showToast('셀프 리뷰를 불러오는 중...');
+
+  try {
+    const data = await apiGet('getSelfReviewData', `&team=${encodeURIComponent(teamName)}&nickname=${encodeURIComponent(nickname)}`);
+    if (data.error) { showToast(data.error); return; }
+
+    const attendance = getSelfReviewAttendance(teamName);
+    const common = getSelfReviewCommon(teamName);
+
+    let html = `<button onclick="closeSelfReviewModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:22px;color:#999;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">&times;</button>`;
+    html += `<h3 style="margin-bottom:4px;">${nickname}의 셀프 리뷰</h3>`;
+    html += `<div style="color:#888;font-size:13px;margin-bottom:24px;">${data.team || teamName} · ${currentPeriod.label}${data.type === 'special' ? ' · 별도 트랙' : ''}</div>`;
+
+    // 근태 평가
+    html += `<div style="margin-bottom:24px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">근태 평가</div>`;
+    (data.attendanceScores || []).forEach((s, i) => {
+      html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;">
+        <span style="color:#555;">${attendance[i] ? attendance[i].q : (i+1)+'번'}</span>
+        <span style="font-weight:700;min-width:30px;text-align:center;">${s}점</span>
+      </div>`;
+    });
+    html += `</div>`;
+
+    // 공통 역량
+    html += `<div style="margin-bottom:24px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">공통 역량 평가</div>`;
+    (data.commonScores || []).forEach((s, i) => {
+      html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;">
+        <span style="color:#555;">${common[i] ? common[i].q : (i+1)+'번'}</span>
+        <span style="font-weight:700;min-width:30px;text-align:center;">${s}점</span>
+      </div>`;
+    });
+    html += `</div>`;
+
+    // 직무 역량
+    if (data.type === 'normal' && data.jobScores) {
+      const jobData = SELF_REVIEW_QUESTIONS[teamName];
+      html += `<div style="margin-bottom:24px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">직무 역량 평가</div>`;
+      data.jobScores.forEach((s, i) => {
+        html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;">
+          <span style="color:#555;">${jobData && jobData.questions[i] ? jobData.questions[i] : (i+1)+'번'}</span>
+          <span style="font-weight:700;min-width:30px;text-align:center;">${s}점</span>
+        </div>`;
+      });
+      html += `</div>`;
+    } else if (data.type === 'special') {
+      html += `<div style="margin-bottom:24px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">[서술형] 직무 역량 평가</div>
+        <div style="margin-bottom:12px;"><span style="font-size:12px;color:#888;">잘한 점 (강점)</span><div style="background:#f9f9f9;padding:12px;border-radius:6px;margin-top:4px;font-size:13px;line-height:1.6;white-space:pre-wrap;">${data.strength}</div></div>
+        <div><span style="font-size:12px;color:#888;">아쉬운 점 (개선)</span><div style="background:#f9f9f9;padding:12px;border-radius:6px;margin-top:4px;font-size:13px;line-height:1.6;white-space:pre-wrap;">${data.weakness}</div></div>
+      </div>`;
+    }
+
+    // 종합 평가
+    html += `<div style="margin-bottom:24px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">종합 평가</div>
+      <div style="display:flex;gap:24px;margin-bottom:12px;">
+        <div><span style="font-size:12px;color:#888;">최종 점수</span><div style="font-size:24px;font-weight:700;margin-top:4px;">${data.finalScore}점</div></div>
+      </div>
+      <div style="margin-bottom:8px;"><span style="font-size:12px;color:#888;">강점</span><div style="margin-top:4px;font-size:13px;">${data.strengths}</div></div>
+      <div style="margin-bottom:8px;"><span style="font-size:12px;color:#888;">개선점</span><div style="margin-top:4px;font-size:13px;">${data.improvements}</div></div>
+    </div>`;
+
+    // 리더 질문 & 자유기재
+    html += `<div style="margin-bottom:24px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">리더에게 궁금한 점</div>
+      <div style="background:#f9f9f9;padding:12px;border-radius:6px;font-size:13px;line-height:1.6;white-space:pre-wrap;">${data.leaderQuestion}</div>
+    </div>`;
+
+    if (data.freeComment && data.freeComment !== '없습니다') {
+      html += `<div style="margin-bottom:16px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">자유기재</div>
+        <div style="background:#f9f9f9;padding:12px;border-radius:6px;font-size:13px;line-height:1.6;white-space:pre-wrap;">${data.freeComment}</div>
+      </div>`;
+    }
+
+    document.getElementById('selfReviewViewContent').innerHTML = html;
+    document.getElementById('selfReviewViewOverlay').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  } catch (err) {
+    showToast('셀프 리뷰를 불러오지 못했습니다.');
+  }
+}
+
+function closeSelfReviewModal() {
+  document.getElementById('selfReviewViewOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
 
 // 수정하기 버튼 클릭 시 팀 비밀번호 확인
 let pendingEditTeam = null;

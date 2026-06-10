@@ -850,8 +850,7 @@ function renderTeamView(name) {
       <div style="display:flex;gap:8px;">
         <button class="btn btn-hr btn-small" onclick="showReviewLink('${name}')">팀원 리뷰지 전달하기</button>
         <button class="btn btn-hr btn-small" onclick="showSpecialTrackLink('${name}')" style="color:#E65100;">별도 트랙 리뷰지 전달하기</button>
-        <button class="btn btn-hr btn-small" onclick="unlockSelfReview('${name}')" style="color:#1565C0;">셀프 리뷰지 공개</button>
-        <button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')">제출 내역 조회 (HR)</button>
+<button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')">제출 내역 조회 (HR)</button>
       </div>
     </div>
   </div>`;
@@ -908,7 +907,6 @@ function renderTeamView(name) {
       </td>
       <td>
         <span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:${selfReviewStatus[name + '::' + nickname] ? '#424242' : '#e0e0e0'};text-align:center;line-height:18px;color:#fff;font-size:13px;font-weight:bold;">${selfReviewStatus[name + '::' + nickname] ? '✓' : ''}</span>
-        ${selfReviewStatus[name + '::' + nickname] ? `<button class="btn btn-small sr-view-btn-${name.replace(/[^a-zA-Z가-힣]/g,'')}" style="margin-left:6px;font-size:11px;padding:2px 8px;color:#1565C0;border-color:#ccc;display:${unlockedSelfReviewTeams.has(name) ? 'inline-block' : 'none'};" onclick="viewSelfReview('${name}','${nickname}')">보기</button>` : ''}
       </td>
       <td>
         <input type="checkbox" ${interviewed ? 'checked' : ''} onchange="toggleInterview('${name}','${emp}',this.checked)" style="width:16px; height:16px; cursor:pointer;">

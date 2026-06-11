@@ -281,6 +281,25 @@
 <!-- Self Review Page (hidden by default) -->
 <div id="selfReviewPage" style="display:none;"></div>
 
+<!-- Self Review Lookup Modal -->
+<div class="modal-overlay" id="srLookupOverlay" onclick="if(event.target===this)closeSrLookup()">
+  <div class="pw-modal" style="max-width:360px;">
+    <h3>셀프 평가 조회</h3>
+    <p><span id="srLookupTeam"></span> 팀원의 셀프 평가를 조회합니다.</p>
+    <div style="margin-bottom:12px;">
+      <input type="password" class="pw-input" id="srLookupPw" placeholder="팀별 숫자 4자리" onkeydown="if(event.key==='Enter')document.getElementById('srLookupNick').focus()">
+    </div>
+    <div style="margin-bottom:8px;">
+      <input type="text" class="pw-input" id="srLookupNick" placeholder="조회할 팀원 닉네임 (영어 소문자)" onkeydown="if(event.key==='Enter')submitSrLookup()" style="font-size:14px;">
+    </div>
+    <div class="pw-error" id="srLookupError" style="display:none;"></div>
+    <div class="form-actions" style="justify-content:center;border:none;padding-top:16px;">
+      <button class="btn" onclick="closeSrLookup()">취소</button>
+      <button class="btn btn-primary" onclick="submitSrLookup()">조회</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
@@ -850,7 +869,8 @@ function renderTeamView(name) {
       <div style="display:flex;gap:8px;">
         <button class="btn btn-hr btn-small" onclick="showReviewLink('${name}')">팀원 리뷰지 전달하기</button>
         <button class="btn btn-hr btn-small" onclick="showSpecialTrackLink('${name}')" style="color:#E65100;">별도 트랙 리뷰지 전달하기</button>
-<button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')">제출 내역 조회 (HR)</button>
+        <button class="btn btn-hr btn-small" onclick="openSelfReviewLookup('${name}')" style="color:#1565C0;">셀프 평가 조회</button>
+        <button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')">제출 내역 조회 (HR)</button>
       </div>
     </div>
   </div>`;
@@ -1259,24 +1279,44 @@ document.getElementById('modalOverlay').addEventListener('click', function(e) {
 
 let pendingHistoryTeam = null;
 
-// ─── 셀프 리뷰 공개/보기 ───
+// ─── 셀프 평가 조회 (비밀번호 + 닉네임 → 새 창) ───
 
-let pendingUnlockTeam = null;
-
-function unlockSelfReview(teamName) {
-  if (unlockedSelfReviewTeams.has(teamName)) {
-    showToast('이미 공개된 상태입니다.');
-    return;
-  }
-  pendingUnlockTeam = teamName;
-  document.getElementById('pwInput').value = '';
-  document.getElementById('pwError').style.display = 'none';
-  document.getElementById('pwOverlay').classList.add('show');
+function openSelfReviewLookup(teamName) {
+  // 모달 표시
+  const overlay = document.getElementById('srLookupOverlay');
+  document.getElementById('srLookupTeam').textContent = teamName;
+  document.getElementById('srLookupPw').value = '';
+  document.getElementById('srLookupNick').value = '';
+  document.getElementById('srLookupError').style.display = 'none';
+  overlay.classList.add('show');
   document.body.style.overflow = 'hidden';
-  setTimeout(() => document.getElementById('pwInput').focus(), 100);
+  setTimeout(() => document.getElementById('srLookupPw').focus(), 100);
 }
 
-async function viewSelfReview(teamName, nickname) {
+function closeSrLookup() {
+  document.getElementById('srLookupOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+async function submitSrLookup() {
+  const teamName = document.getElementById('srLookupTeam').textContent;
+  const pw = document.getElementById('srLookupPw').value;
+  const nickname = document.getElementById('srLookupNick').value.trim().toLowerCase();
+
+  const teamPw = TEAM_PASSWORDS[teamName];
+  if (pw !== teamPw && pw !== HR_PASSWORD) {
+    document.getElementById('srLookupError').textContent = '비밀번호가 일치하지 않습니다.';
+    document.getElementById('srLookupError').style.display = 'block';
+    return;
+  }
+  if (!nickname) {
+    document.getElementById('srLookupError').textContent = '닉네임을 입력해주세요.';
+    document.getElementById('srLookupError').style.display = 'block';
+    return;
+  }
+
+  closeSrLookup();
+
   const w = window.open('', '_blank', 'width=700,height=800,scrollbars=yes');
   w.document.write('<html><head><meta charset="utf-8"><title>셀프 리뷰 - ' + nickname + '</title></head><body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:600px;margin:40px auto;padding:0 20px;color:#333;"><div style="text-align:center;padding:40px;color:#888;">불러오는 중...</div></body></html>');
 
@@ -1290,7 +1330,6 @@ async function viewSelfReview(teamName, nickname) {
     let html = `<h2 style="margin-bottom:4px;">${nickname}의 셀프 리뷰</h2>`;
     html += `<div style="color:#888;font-size:14px;margin-bottom:32px;">${data.team || teamName} · ${currentPeriod.label}${data.type === 'special' ? ' · 별도 트랙' : ''}</div>`;
 
-    // 근태 평가
     html += `<div style="margin-bottom:28px;">
       <div style="font-weight:700;font-size:15px;margin-bottom:12px;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">근태 평가</div>`;
     (data.attendanceScores || []).forEach((s, i) => {
@@ -1301,7 +1340,6 @@ async function viewSelfReview(teamName, nickname) {
     });
     html += `</div>`;
 
-    // 공통 역량
     html += `<div style="margin-bottom:28px;">
       <div style="font-weight:700;font-size:15px;margin-bottom:12px;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">공통 역량 평가</div>`;
     (data.commonScores || []).forEach((s, i) => {
@@ -1312,7 +1350,6 @@ async function viewSelfReview(teamName, nickname) {
     });
     html += `</div>`;
 
-    // 직무 역량
     if (data.type === 'normal' && data.jobScores) {
       const jobData = SELF_REVIEW_QUESTIONS[teamName];
       html += `<div style="margin-bottom:28px;">
@@ -1332,7 +1369,6 @@ async function viewSelfReview(teamName, nickname) {
       </div>`;
     }
 
-    // 종합 평가
     html += `<div style="margin-bottom:28px;">
       <div style="font-weight:700;font-size:15px;margin-bottom:12px;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">종합 평가</div>
       <div style="margin-bottom:16px;"><span style="font-size:13px;color:#888;">최종 점수</span><div style="font-size:28px;font-weight:700;margin-top:4px;">${data.finalScore}점</div></div>
@@ -1340,7 +1376,6 @@ async function viewSelfReview(teamName, nickname) {
       <div style="margin-bottom:10px;"><span style="font-size:13px;color:#888;">개선점</span><div style="margin-top:4px;font-size:14px;">${data.improvements}</div></div>
     </div>`;
 
-    // 리더 질문 & 자유기재
     html += `<div style="margin-bottom:28px;">
       <div style="font-weight:700;font-size:15px;margin-bottom:12px;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">리더에게 궁금한 점</div>
       <div style="background:#f9f9f9;padding:14px;border-radius:8px;font-size:14px;line-height:1.7;white-space:pre-wrap;">${data.leaderQuestion}</div>
@@ -1399,23 +1434,6 @@ function promptHistoryPassword() {
 
 function checkPassword() {
   const pw = document.getElementById('pwInput').value;
-
-  // 셀프 리뷰 공개 비밀번호 확인
-  if (pendingUnlockTeam) {
-    const teamPw = TEAM_PASSWORDS[pendingUnlockTeam];
-    if (pw === teamPw || pw === HR_PASSWORD) {
-      unlockedSelfReviewTeams.add(pendingUnlockTeam);
-      closePwModal();
-      renderTeamView(pendingUnlockTeam);
-      showToast('셀프 리뷰지가 공개되었습니다.');
-      pendingUnlockTeam = null;
-    } else {
-      document.getElementById('pwError').style.display = 'block';
-      document.getElementById('pwInput').value = '';
-      document.getElementById('pwInput').focus();
-    }
-    return;
-  }
 
   // 수정하기 비밀번호 확인
   if (pendingEditTeam) {

@@ -861,15 +861,15 @@ function renderTeamView(name) {
   const submitted = team.employees.filter(e => submissions[getKey(name, e)]).length;
 
   let html = `<div class="team-header">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-      <div>
-        <h3 style="margin-bottom:4px;">${name}</h3>
-        <span class="subtitle" style="font-size:12px;">평가 대상 ${team.employees.length}명 · 제출 완료 ${submitted}명</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:baseline;">
+        <h3>${name}</h3>
+        <span class="subtitle">평가 대상 ${team.employees.length}명 · 제출 완료 ${submitted}명</span>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <div style="display:flex;gap:8px;">
         <button class="btn btn-hr btn-small" onclick="showReviewLink('${name}')">팀 리뷰지 전달</button>
-        <button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')" style="background:#FFF0F0;border-color:#E57373;color:#C62828;">리더 평가 조회</button>
         <button class="btn btn-hr btn-small" onclick="showSpecialTrackLink('${name}')">별도 리뷰지 전달</button>
+        <button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')" style="background:#FFF0F0;border-color:#E57373;color:#C62828;">리더 평가 조회</button>
         <button class="btn btn-hr btn-small" onclick="openSelfReviewLookup('${name}')" style="background:#F0FFF0;border-color:#81C784;color:#2E7D32;">1:1 셀프 평가 조회</button>
       </div>
     </div>

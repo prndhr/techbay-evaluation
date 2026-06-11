@@ -861,10 +861,10 @@ function renderTeamView(name) {
   const submitted = team.employees.filter(e => submissions[getKey(name, e)]).length;
 
   let html = `<div class="team-header">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-      <div style="display:flex;align-items:baseline;">
-        <h3>${name}</h3>
-        <span class="subtitle">평가 대상 ${team.employees.length}명 · 제출 완료 ${submitted}명</span>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h3 style="margin-bottom:4px;">${name}</h3>
+        <span class="subtitle" style="font-size:12px;">평가 대상 ${team.employees.length}명 · 제출 완료 ${submitted}명</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
         <button class="btn btn-hr btn-small" onclick="showReviewLink('${name}')">팀 리뷰지 전달</button>

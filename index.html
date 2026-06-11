@@ -866,11 +866,11 @@ function renderTeamView(name) {
         <h3>${name}</h3>
         <span class="subtitle">평가 대상 ${team.employees.length}명 · 제출 완료 ${submitted}명</span>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-hr btn-small" onclick="showReviewLink('${name}')">팀원 리뷰지 전달하기</button>
-        <button class="btn btn-hr btn-small" onclick="showSpecialTrackLink('${name}')" style="color:#E65100;">별도 트랙 리뷰지 전달하기</button>
-        <button class="btn btn-hr btn-small" onclick="openSelfReviewLookup('${name}')" style="color:#1565C0;">셀프 평가 조회</button>
-        <button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')">제출 내역 조회 (HR)</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <button class="btn btn-hr btn-small" onclick="showReviewLink('${name}')">팀 리뷰지 전달</button>
+        <button class="btn btn-hr btn-small" onclick="promptTeamHistoryPassword('${name}')" style="background:#FFF0F0;border-color:#E57373;color:#C62828;">리더 평가 조회</button>
+        <button class="btn btn-hr btn-small" onclick="showSpecialTrackLink('${name}')">별도 리뷰지 전달</button>
+        <button class="btn btn-hr btn-small" onclick="openSelfReviewLookup('${name}')" style="background:#F0FFF0;border-color:#81C784;color:#2E7D32;">1:1 셀프 평가 조회</button>
       </div>
     </div>
   </div>`;

@@ -887,7 +887,6 @@ function renderTeamView(name) {
       <th>수정하기</th>
       <th>제출 여부</th>
       <th>팀원 제출 상황</th>
-      <th>면담</th>
       <th>삭제</th>
     </tr></thead><tbody>`;
 
@@ -897,8 +896,6 @@ function renderTeamView(name) {
     const nickname = DEFAULT_NICKNAMES[key] || '';
     const hiredate = DEFAULT_HIREDATES[key] || '';
     const displayDate = hiredate ? hiredate.substring(2).replace(/-/g, '.') : '';
-    const interviewed = localStorage.getItem('interview_' + currentPeriod.id + '_' + key);
-
     html += `<tr>
       <td style="color:#888;">${i + 1}</td>
       <td style="font-weight:600;">${nickname || '-'}</td>
@@ -929,9 +926,6 @@ function renderTeamView(name) {
         <span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:${selfReviewStatus[name + '::' + nickname] ? '#424242' : '#e0e0e0'};text-align:center;line-height:18px;color:#fff;font-size:13px;font-weight:bold;">${selfReviewStatus[name + '::' + nickname] ? '✓' : ''}</span>
       </td>
       <td>
-        <input type="checkbox" ${interviewed ? 'checked' : ''} onchange="toggleInterview('${name}','${emp}',this.checked)" style="width:16px; height:16px; cursor:pointer;">
-      </td>
-      <td>
         <button class="btn btn-small" style="color:#C62828; border-color:#ddd;" onclick="deleteEmployee('${name}','${emp}')">삭제</button>
       </td>
     </tr>`;
@@ -947,15 +941,6 @@ function renderTeamView(name) {
 // ══════════════════════════════════════════════
 // RENEWAL CHECKBOX & DELETE EMPLOYEE
 // ══════════════════════════════════════════════
-
-function toggleInterview(teamName, empName, checked) {
-  const key = 'interview_' + currentPeriod.id + '_' + getKey(teamName, empName);
-  if (checked) {
-    localStorage.setItem(key, '1');
-  } else {
-    localStorage.removeItem(key);
-  }
-}
 
 async function deleteEmployee(teamName, empName) {
   if (!confirm(`${empName} 님을 ${teamName} 대상자 목록에서 삭제하시겠습니까?`)) return;

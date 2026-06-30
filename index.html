@@ -728,14 +728,14 @@ async function loadPeriodData() {
       TEAMS[key].employees = DEFAULT_EMPLOYEES[key] || ["홍길동"];
     });
 
-    // 기본 갱신 데이터 적용
-    if (Object.keys(renewals).length === 0) {
-      Object.keys(DEFAULT_RENEWAL_NAMES).forEach(team => {
-        (DEFAULT_RENEWAL_NAMES[team] || []).forEach(emp => {
-          renewals[team + '::' + emp] = true;
-        });
+    // 기본 갱신 데이터를 먼저 적용한 후, 서버 데이터로 덮어쓰기
+    const baseRenewals = {};
+    Object.keys(DEFAULT_RENEWAL_NAMES).forEach(team => {
+      (DEFAULT_RENEWAL_NAMES[team] || []).forEach(emp => {
+        baseRenewals[team + '::' + emp] = true;
       });
-    }
+    });
+    renewals = Object.assign(baseRenewals, renewals);
 
     // 서버에서 받은 대상자 명단 적용 (서버 데이터가 있으면 덮어쓰기)
     const employees = empData.employees || {};

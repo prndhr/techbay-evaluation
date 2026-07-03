@@ -2667,11 +2667,15 @@ document.addEventListener('click', function(e) {
 // ══════════════════════════════════════════════
 
 (async function init() {
+  // ★ 셀프 리뷰 마감 플래그 (true = 제출 마감)
+  const SELF_REVIEW_CLOSED = true;
+
   // Check for self-review mode
   const urlParams = new URLSearchParams(window.location.search);
   // 별도 트랙 셀프 리뷰
   const specialCode = urlParams.get('s');
   if (specialCode) {
+    if (SELF_REVIEW_CLOSED) { document.body.innerHTML = '<div style="text-align:center;padding:80px;font-size:18px;color:#888;font-family:Pretendard,sans-serif;"><div style="font-size:48px;margin-bottom:16px;">📋</div><b>셀프 리뷰가 마감되었습니다.</b><br><span style="font-size:14px;margin-top:8px;display:inline-block;">제출 기간이 종료되었습니다. 감사합니다.</span></div>'; return; }
     const specialTeam = decodeTeam(specialCode);
     if (!specialTeam || !TEAMS[specialTeam]) { document.body.innerHTML = '<div style="text-align:center;padding:80px;font-size:16px;color:#888;">유효하지 않은 링크입니다.</div>'; return; }
     renderSpecialTrackSelfReview(specialTeam);
@@ -2680,6 +2684,7 @@ document.addEventListener('click', function(e) {
 
   const reviewCode = urlParams.get('r') || urlParams.get('review');
   if (reviewCode) {
+    if (SELF_REVIEW_CLOSED) { document.body.innerHTML = '<div style="text-align:center;padding:80px;font-size:18px;color:#888;font-family:Pretendard,sans-serif;"><div style="font-size:48px;margin-bottom:16px;">📋</div><b>셀프 리뷰가 마감되었습니다.</b><br><span style="font-size:14px;margin-top:8px;display:inline-block;">제출 기간이 종료되었습니다. 감사합니다.</span></div>'; return; }
     const reviewTeam = urlParams.get('review') ? decodeURIComponent(urlParams.get('review')) : decodeTeam(reviewCode);
     if (!reviewTeam || !TEAMS[reviewTeam]) { document.body.innerHTML = '<div style="text-align:center;padding:80px;font-size:16px;color:#888;">유효하지 않은 링크입니다.</div>'; return; }
     renderSelfReviewForm(reviewTeam);

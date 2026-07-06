@@ -674,16 +674,21 @@ let currentTeam = null;
 let hrAuthenticated = false; // unused legacy
 let isLoading = false;
 
+// ── 구글 로그인 인증 ──
+const GOOGLE_CLIENT_ID = '972300587583-ppkvub4hmiapoh6b3883uphohhh3tki7.apps.googleusercontent.com';
+let idToken = null;
+
 // ─── API 호출 유틸 ───
 
 async function apiGet(action, extra) {
-  const url = `${API_URL}?action=${action}&period=${currentPeriod.id}${extra || ''}`;
+  const url = `${API_URL}?action=${action}&period=${currentPeriod.id}&idToken=${encodeURIComponent(idToken || '')}${extra || ''}`;
   const res = await fetch(url, { redirect: 'follow' });
   return res.json();
 }
 
 async function apiPost(data) {
   data.period = data.period || currentPeriod.id;
+  data.idToken = idToken;
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -2691,47 +2696,53 @@ document.addEventListener('click', function(e) {
     return;
   }
 
-  // 관리자 비밀번호 확인
-  const ADMIN_PASSWORD = 'flejdyddlstk1234!';
-
-  // 메인 UI 숨기기
+  // ── 구글 로그인 (회사 계정 인증) ──
   document.querySelector('.header').style.display = 'none';
   document.querySelector('.container').style.display = 'none';
 
-  // API 데이터를 비밀번호 입력과 동시에 미리 로드
-  const dataPromise = loadPeriodData();
-
-  // 비밀번호 입력 화면
-  const pwOverlay = document.createElement('div');
-  pwOverlay.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
-    <div style="text-align:center;">
-      <h2 style="margin-bottom:8px;font-size:18px;color:#333;">B2C인사평가 보드 로그인 창</h2>
-      <p style="color:#888;font-size:13px;margin-bottom:24px;">특수 문자를 포함한 비밀번호를 입력하세요.</p>
-      <input type="password" id="adminPwInput" lang="en" autocomplete="off" spellcheck="false"
-        style="width:260px;padding:12px 16px;border:1px solid #ddd;border-radius:8px;font-size:15px;text-align:center;outline:none;"
-        placeholder="비밀번호">
-      <div id="adminPwError" style="color:#C62828;font-size:13px;margin-top:12px;display:none;">비밀번호가 일치하지 않습니다.</div>
-    </div>
-  </div>`;
-  document.body.appendChild(pwOverlay);
-
-  const pwInput = document.getElementById('adminPwInput');
-  pwInput.focus();
-
-  const pw = await new Promise(resolve => {
-    pwInput.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        resolve(pwInput.value);
-      }
-    });
+  // Google Identity Services 로드
+  await new Promise((resolve, reject) => {
+    if (window.google && google.accounts && google.accounts.id) return resolve();
+    const gs = document.createElement('script');
+    gs.src = 'https://accounts.google.com/gsi/client';
+    gs.async = true; gs.defer = true;
+    gs.onload = resolve; gs.onerror = reject;
+    document.head.appendChild(gs);
   });
 
-  if (pw !== ADMIN_PASSWORD) {
-    document.getElementById('adminPwError').style.display = 'block';
+  const loginOverlay = document.createElement('div');
+  loginOverlay.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
+    <div style="text-align:center;">
+      <h2 style="margin-bottom:8px;font-size:18px;color:#333;">B2C 인사평가 보드</h2>
+      <p style="color:#888;font-size:13px;margin-bottom:24px;">회사 구글 계정(@prnd.co.kr)으로 로그인하세요.</p>
+      <div id="googleBtn" style="display:flex;justify-content:center;"></div>
+      <div id="loginError" style="color:#C62828;font-size:13px;margin-top:16px;display:none;"></div>
+    </div>
+  </div>`;
+  document.body.appendChild(loginOverlay);
+
+  const credential = await new Promise(resolve => {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: (resp) => resolve(resp.credential)
+    });
+    google.accounts.id.renderButton(document.getElementById('googleBtn'),
+      { theme: 'outline', size: 'large', text: 'signin_with', locale: 'ko', width: 260 });
+  });
+
+  idToken = credential;
+
+  // 서버에서 권한 확인 (미허용 계정이면 거부)
+  const authCheck = await apiGet('getEmployees');
+  if (!authCheck || authCheck.error) {
+    idToken = null;
+    const el = document.getElementById('loginError');
+    el.textContent = (authCheck && authCheck.error) ? authCheck.error : '로그인에 실패했습니다. 다시 시도해 주세요.';
+    el.style.display = 'block';
     return;
   }
 
-  pwOverlay.remove();
+  loginOverlay.remove();
   document.querySelector('.header').style.display = '';
   document.querySelector('.container').style.display = '';
 
@@ -2743,8 +2754,8 @@ document.addEventListener('click', function(e) {
   });
   renderNav();
 
-  // 미리 로드한 API 데이터 완료 대기 후 업데이트
-  await dataPromise;
+  // API 데이터 로드 후 갱신
+  await loadPeriodData();
   renderNav();
   if (currentTeam) selectTeam(currentTeam);
 })();
